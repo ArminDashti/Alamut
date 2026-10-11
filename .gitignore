@@ -573,3 +573,24 @@ netvan-webui/node_modules/.vite/deps/echarts-for-react.js.map
 release/NetvaSetup.exe
 release/staging/netvan-api.exe
 release/staging/winsw.exe
+
+# hygiene
+node_modules/
+dist/
+build/
+bin/
+obj/
+.venv/
+__pycache__/
+*.log
+logs/
+.env
+.env.*
+*.tsbuildinfo
+.cache/
+coverage/
+*.zip
+*.7z
+graphify-out/
+.gitnexus/
+!.env.example
