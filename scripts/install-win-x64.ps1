@@ -1,12 +1,12 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Build and install/update both the Netvan API and WebUI on Windows x64.
+  Build and install/update both the Alamut API and WebUI on Windows x64.
 
 .DESCRIPTION
   Compatibility entry point for the standalone install-win-x64.ps1 name.
   The shared installer performs a release API build, a production WebUI build,
-  and installs or updates the single Netvan Windows service that runs both.
+  and installs or updates the single Alamut Windows service that runs both.
 
   Requires an elevated PowerShell, Rust/Cargo, Node.js/npm, and .NET when the
   API thermal helper is enabled by its Cargo build script.
@@ -20,8 +20,8 @@
 [CmdletBinding(PositionalBinding = $false)]
 param(
   [string]$ProjectRoot,
-  [string]$StackName = 'netvan',
-  [string]$ServiceName = 'Netvan',
+  [string]$StackName = 'alamut',
+  [string]$ServiceName = 'Alamut',
   [Parameter(ValueFromRemainingArguments = $true)]
   [string[]]$CliArgs
 )
@@ -35,8 +35,8 @@ if (-not (Test-Path -LiteralPath $installer)) {
 
 # This entry point is intentionally a full rebuild; do not inherit optional
 # development shortcuts from the calling shell.
-$env:NETVAN_INSTALL_SKIP_API_BUILD = $null
-$env:NETVAN_INSTALL_SKIP_WEBUI_BUILD = $null
+$env:ALAMUT_INSTALL_SKIP_API_BUILD = $null
+$env:ALAMUT_INSTALL_SKIP_WEBUI_BUILD = $null
 
 $forwarded = @('-StackName', $StackName, '-ServiceName', $ServiceName)
 if (-not [string]::IsNullOrWhiteSpace($ProjectRoot)) {
@@ -48,5 +48,5 @@ if ($CliArgs) {
 
 & $installer @forwarded
 if ($LASTEXITCODE -ne 0) {
-  throw "Netvan API + WebUI installation failed ($LASTEXITCODE)"
+  throw "Alamut API + WebUI installation failed ($LASTEXITCODE)"
 }

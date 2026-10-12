@@ -1,12 +1,12 @@
 /**
- * Global types for the Netvan Electron preload bridge.
+ * Global types for the Alamut Electron preload bridge.
  *
- * The preload exposes `window.netvan` only when running inside the Electron
+ * The preload exposes `window.alamut` only when running inside the Electron
  * desktop wrapper; in the browser PWA it is undefined. Declaring the shape
  * here lets src/lib/api.ts and SettingsPage read it without `any` casts.
  */
 
-export interface NetvanElectronBridge {
+export interface AlamutElectronBridge {
   /** Synchronous API base URL (argv/env resolved in the preload). */
   getApiUrlSync?: () => string;
   /** Async API base URL (re-queries the main process). */
@@ -21,7 +21,7 @@ export interface NetvanElectronBridge {
 
 declare global {
   interface Window {
-    netvan?: NetvanElectronBridge;
+    alamut?: AlamutElectronBridge;
   }
 }
 

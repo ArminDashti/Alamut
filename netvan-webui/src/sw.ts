@@ -24,7 +24,7 @@ registerRoute(
   ({ request, url }) =>
     request.destination === "image" || url.pathname.endsWith(".svg"),
   new CacheFirst({
-    cacheName: "netvan-images",
+    cacheName: "alamut-images",
     plugins: [
       new ExpirationPlugin({ maxEntries: 400, maxAgeSeconds: 60 * 60 * 24 * 30 }),
     ],
@@ -48,7 +48,7 @@ registerRoute(
     url.origin === self.location.origin &&
     ["script", "style", "font", "worker"].includes(request.destination),
   new CacheFirst({
-    cacheName: "netvan-static",
+    cacheName: "alamut-static",
     plugins: [
       new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 90 }),
     ],

@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **netvan** (1732 symbols, 3295 relationships, 135 execution flows).
+This project is indexed by GitNexus as **alamut** (1732 symbols, 3295 relationships, 135 execution flows).
 
 > Index stale? Run `node .gitnexus/run.cjs analyze --index-only` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? Bootstrap with `npx`, `bunx`, or `pnpm dlx` — e.g. `bunx gitnexus@latest analyze` (npm 11 npx crash; #1939).
 
@@ -25,10 +25,10 @@ This project is indexed by GitNexus as **netvan** (1732 symbols, 3295 relationsh
 
 | Resource | Use for |
 | --- | --- |
-| `gitnexus://repo/netvan/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/netvan/clusters` | All functional areas |
-| `gitnexus://repo/netvan/processes` | All execution flows |
-| `gitnexus://repo/netvan/process/{name}` | Step-by-step execution trace |
+| `gitnexus://repo/alamut/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/alamut/clusters` | All functional areas |
+| `gitnexus://repo/alamut/processes` | All execution flows |
+| `gitnexus://repo/alamut/process/{name}` | Step-by-step execution trace |
 
 ## CLI
 

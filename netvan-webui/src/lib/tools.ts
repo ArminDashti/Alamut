@@ -41,7 +41,7 @@ function parseMsg(data: string): ServerMsg {
   return JSON.parse(data) as ServerMsg;
 }
 
-/** Display-only: request live ping from netvan-api and stream lines. */
+/** Display-only: request live ping from alamut-api and stream lines. */
 export async function runPingLive(opts: {
   target: string;
   count?: number;

@@ -31,7 +31,7 @@ dependencies = [
  "chrono",
  "clap",
  "crossterm",
- "netvan-core",
+ "alamut-core",
  "ratatui",
  "reqwest",
  "serde",
@@ -1167,15 +1167,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "netvan-api"
+name = "alamut-api"
 version = "0.2.0"
 dependencies = [
  "anyhow",
  "axum",
  "clap",
  "futures-util",
- "netvan-collectors",
- "netvan-core",
+ "alamut-collectors",
+ "alamut-core",
  "serde",
  "serde_json",
  "tokio",
@@ -1188,13 +1188,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "netvan-collectors"
+name = "alamut-collectors"
 version = "0.2.0"
 dependencies = [
  "anyhow",
  "chrono",
  "dns-lookup",
- "netvan-core",
+ "alamut-core",
  "once_cell",
  "parking_lot",
  "reqwest",
@@ -1209,7 +1209,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "netvan-core"
+name = "alamut-core"
 version = "0.2.0"
 dependencies = [
  "anyhow",

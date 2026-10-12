@@ -1,11 +1,11 @@
 #Requires -RunAsAdministrator
 <#
 .SYNOPSIS
-  Rebuild Netvan release binary, remove the old Windows service, install and start the new one.
+  Rebuild Alamut release binary, remove the old Windows service, install and start the new one.
 
 .DESCRIPTION
-  Run this after any code change that affects the installed Netvan Windows service.
-  The single "Netvan" service covers both the Web UI and API (http://netvan.local).
+  Run this after any code change that affects the installed Alamut Windows service.
+  The single "Alamut" service covers both the Web UI and API (http://alamut.local).
   Must be elevated (Administrator).
 #>
 $ErrorActionPreference = "Stop"
@@ -32,8 +32,8 @@ function Find-ApiBinary {
   param([Parameter(Mandatory = $true)][string]$Target)
   # Prefer the binary cargo just built for $Target; target\release may be a stale host build.
   $candidates = @(
-    (Join-Path $RepoRoot "target\$Target\release\netvan-api.exe"),
-    (Join-Path $RepoRoot 'target\release\netvan-api.exe')
+    (Join-Path $RepoRoot "target\$Target\release\alamut-api.exe"),
+    (Join-Path $RepoRoot 'target\release\alamut-api.exe')
   )
   foreach ($c in $candidates) {
     if (Test-Path -LiteralPath $c) { return (Resolve-Path -LiteralPath $c).Path }
@@ -59,15 +59,15 @@ function Invoke-BestEffort {
 }
 
 $target = Resolve-ApiCargoTarget
-Write-Host "==> cargo build -p netvan-api --release --target $target"
-cargo build -p netvan-api --release --target $target
+Write-Host "==> cargo build -p alamut-api --release --target $target"
+cargo build -p alamut-api --release --target $target
 if ($LASTEXITCODE -ne 0) {
   throw "cargo build failed with exit code $LASTEXITCODE"
 }
 
 $Exe = Find-ApiBinary -Target $target
 if (-not $Exe) {
-  throw "Missing binary under target/*/release/netvan-api.exe"
+  throw "Missing binary under target/*/release/alamut-api.exe"
 }
 
 Write-Host "==> stop (ignore if not running)"

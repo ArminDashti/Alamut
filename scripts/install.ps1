@@ -1,15 +1,15 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Install or update Netvan as one local Windows service (WinSW): API + WebUI.
+  Install or update Alamut as one local Windows service (WinSW): API + WebUI.
 
 .DESCRIPTION
   Fresh install: assign ports (random safe API + WebUI=API+1, or "port set N"),
-  ensure data dir, build API + WebUI, generate Start-Netvan.ps1 / Serve-WebUi.ps1 /
-  Netvan.xml, install and start a single service named Netvan.
+  ensure data dir, build API + WebUI, generate Start-Alamut.ps1 / Serve-WebUi.ps1 /
+  Alamut.xml, install and start a single service named Alamut.
 
   Already installed: UPDATE path — fully remove prior app/service wrappers, rebuild,
-  rewrite helpers/XML, install+start. Keeps %ProgramData%\Netvan\NetvanApi (SQLite).
+  rewrite helpers/XML, install+start. Keeps %ProgramData%\Alamut\AlamutApi (SQLite).
   Reuses ports from state.json unless "port set N" overrides. Never drops the database.
 
 .EXAMPLE
@@ -22,8 +22,8 @@
 [CmdletBinding(PositionalBinding = $false)]
 param(
   [string]$ProjectRoot,
-  [string]$StackName = 'netvan',
-  [string]$ServiceName = 'Netvan',
+  [string]$StackName = 'alamut',
+  [string]$ServiceName = 'Alamut',
   [Parameter(ValueFromRemainingArguments = $true)]
   [string[]]$CliArgs
 )
@@ -36,17 +36,17 @@ if ([string]::IsNullOrWhiteSpace($ProjectRoot)) {
 
 $DeployDir = $PSScriptRoot
 $StatePath = Join-Path $DeployDir 'state.json'
-$XmlPath = Join-Path $DeployDir 'Netvan.xml'
-$LegacyXmlPath = Join-Path $DeployDir 'netvan-api.xml'
+$XmlPath = Join-Path $DeployDir 'Alamut.xml'
+$LegacyXmlPath = Join-Path $DeployDir 'alamut-api.xml'
 $WinswDownloadPath = Join-Path $DeployDir 'winsw.exe'
 $WinswPath = Join-Path $DeployDir "$ServiceName.exe"
-$StartScript = Join-Path $DeployDir 'Start-Netvan.ps1'
+$StartScript = Join-Path $DeployDir 'Start-Alamut.ps1'
 $ServeScript = Join-Path $DeployDir 'Serve-WebUi.ps1'
-$ApiRoot = Join-Path $ProjectRoot 'netvan-api'
-$WebUiRoot = Join-Path $ProjectRoot 'netvan-webui'
+$ApiRoot = Join-Path $ProjectRoot 'alamut-api'
+$WebUiRoot = Join-Path $ProjectRoot 'alamut-webui'
 $WebUiDist = Join-Path $WebUiRoot 'dist'
-$DataDir = Join-Path $env:ProgramData 'Netvan\NetvanApi'
-$LegacyServiceNames = @('netvan-api', 'netvan-webui', 'Netvan')
+$DataDir = Join-Path $env:ProgramData 'Alamut\AlamutApi'
+$LegacyServiceNames = @('alamut-api', 'alamut-webui', 'Alamut')
 $PortMin = 20000
 $PortMax = 49000
 
@@ -149,9 +149,9 @@ function Get-RandomFreeApiPort {
 
 function Get-NativeApiExe {
   $candidates = @(
-    (Join-Path $ApiRoot 'target\release\netvan-api.exe'),
-    (Join-Path $ApiRoot 'target\x86_64-pc-windows-gnu\release\netvan-api.exe'),
-    (Join-Path $ApiRoot 'target\x86_64-pc-windows-msvc\release\netvan-api.exe')
+    (Join-Path $ApiRoot 'target\release\alamut-api.exe'),
+    (Join-Path $ApiRoot 'target\x86_64-pc-windows-gnu\release\alamut-api.exe'),
+    (Join-Path $ApiRoot 'target\x86_64-pc-windows-msvc\release\alamut-api.exe')
   )
   foreach ($c in $candidates) {
     if (Test-Path -LiteralPath $c) { return (Resolve-Path -LiteralPath $c).Path }
@@ -206,16 +206,16 @@ function Clear-PriorServices([int]$ApiPort, [int]$WebUiPort) {
     Invoke-WinswSafe -Exe $legacyExe -WinArgs @('stop')
     Invoke-WinswSafe -Exe $legacyExe -WinArgs @('uninstall')
   }
-  $legacyApiExe = Join-Path $DeployDir 'netvan-api.exe'
+  $legacyApiExe = Join-Path $DeployDir 'alamut-api.exe'
   if (Test-Path -LiteralPath $legacyApiExe) {
     Invoke-WinswSafe -Exe $legacyApiExe -WinArgs @('stop')
     Invoke-WinswSafe -Exe $legacyApiExe -WinArgs @('uninstall')
   }
 
   foreach ($extra in @(
-      (Join-Path $env:ProgramFiles 'Netvan\netvan-api.exe'),
-      (Join-Path $env:ProgramFiles 'Netvan\netvan-webui.exe'),
-      (Join-Path $env:ProgramFiles 'Netvan\Netvan.exe')
+      (Join-Path $env:ProgramFiles 'Alamut\alamut-api.exe'),
+      (Join-Path $env:ProgramFiles 'Alamut\alamut-webui.exe'),
+      (Join-Path $env:ProgramFiles 'Alamut\Alamut.exe')
     )) {
     Invoke-WinswSafe -Exe $extra -WinArgs @('stop')
     Invoke-WinswSafe -Exe $extra -WinArgs @('uninstall')
@@ -246,7 +246,7 @@ function Clear-PriorServices([int]$ApiPort, [int]$WebUiPort) {
       $LegacyXmlPath,
       $StartScript,
       $ServeScript,
-      (Join-Path $DeployDir 'netvan-api.exe')
+      (Join-Path $DeployDir 'alamut-api.exe')
     )) {
     if (Test-Path -LiteralPath $gen) {
       Write-Host "==> removing prior app file $([IO.Path]::GetFileName($gen))"
@@ -272,26 +272,26 @@ function Resolve-ApiCargoTarget {
 
 function Build-Api {
   if (-not (Test-Path -LiteralPath $ApiRoot)) { throw "Missing API root: $ApiRoot" }
-  if ($env:NETVAN_INSTALL_SKIP_API_BUILD -eq '1') {
+  if ($env:ALAMUT_INSTALL_SKIP_API_BUILD -eq '1') {
     $existing = Get-NativeApiExe
     if (-not $existing) {
-      throw 'NETVAN_INSTALL_SKIP_API_BUILD=1 but netvan-api.exe not found under target/*/release'
+      throw 'ALAMUT_INSTALL_SKIP_API_BUILD=1 but alamut-api.exe not found under target/*/release'
     }
-    Write-Host "==> skipping cargo build (NETVAN_INSTALL_SKIP_API_BUILD=1); using $existing"
+    Write-Host "==> skipping cargo build (ALAMUT_INSTALL_SKIP_API_BUILD=1); using $existing"
     return $existing
   }
   $target = Resolve-ApiCargoTarget
   Push-Location $ApiRoot
   try {
-    Write-Host "==> cargo build -p netvan-api --release --target $target"
+    Write-Host "==> cargo build -p alamut-api --release --target $target"
     # Out-Host keeps native output off the pipeline so the function returns only the path.
-    cargo build -p netvan-api --release --target $target | Out-Host
+    cargo build -p alamut-api --release --target $target | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "cargo build failed ($LASTEXITCODE)" }
   } finally {
     Pop-Location
   }
   $bin = Get-NativeApiExe
-  if (-not $bin) { throw 'netvan-api.exe not found under target/*/release' }
+  if (-not $bin) { throw 'alamut-api.exe not found under target/*/release' }
   return $bin
 }
 
@@ -299,11 +299,11 @@ function Build-WebUi {
   if (-not (Test-Path -LiteralPath $WebUiRoot)) {
     throw "Missing WebUI root: $WebUiRoot"
   }
-  if ($env:NETVAN_INSTALL_SKIP_WEBUI_BUILD -eq '1') {
+  if ($env:ALAMUT_INSTALL_SKIP_WEBUI_BUILD -eq '1') {
     if (-not (Test-Path -LiteralPath $WebUiDist)) {
-      throw "NETVAN_INSTALL_SKIP_WEBUI_BUILD=1 but dist missing: $WebUiDist"
+      throw "ALAMUT_INSTALL_SKIP_WEBUI_BUILD=1 but dist missing: $WebUiDist"
     }
-    Write-Host "==> skipping npm run build (NETVAN_INSTALL_SKIP_WEBUI_BUILD=1); using $WebUiDist"
+    Write-Host "==> skipping npm run build (ALAMUT_INSTALL_SKIP_WEBUI_BUILD=1); using $WebUiDist"
     return (Resolve-Path -LiteralPath $WebUiDist).Path
   }
   Push-Location $WebUiRoot
@@ -478,7 +478,7 @@ try {
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  WinSW entrypoint: run API + WebUI under one process tree (service Netvan).
+  WinSW entrypoint: run API + WebUI under one process tree (service Alamut).
   Generated by install.ps1 — do not edit as source of truth.
 #>
 param(
@@ -494,7 +494,7 @@ param(
   [Parameter(Mandatory = $true)]
   [string]$ServeScript,
 
-  [string]$DataDir = (Join-Path $env:ProgramData 'Netvan\NetvanApi'),
+  [string]$DataDir = (Join-Path $env:ProgramData 'Alamut\AlamutApi'),
 
   [int]$ApiPort = 8000,
 
@@ -507,12 +507,12 @@ $ErrorActionPreference = 'Stop'
 
 foreach ($need in @($ApiExe, $ApiWorkingDir, $WebUiRoot, $ServeScript)) {
   if (-not (Test-Path -LiteralPath $need)) {
-    throw "Missing path required by Start-Netvan: $need"
+    throw "Missing path required by Start-Alamut: $need"
   }
 }
 
-$env:NETVAN_API_BIND = "${BindHost}:$ApiPort"
-$env:NETVAN_API_DATA_DIR = $DataDir
+$env:ALAMUT_API_BIND = "${BindHost}:$ApiPort"
+$env:ALAMUT_API_DATA_DIR = $DataDir
 
 $ps = (Get-Command powershell.exe).Source
 $webArgs = @(
@@ -524,7 +524,7 @@ $webArgs = @(
   '-HostAddress', $BindHost
 )
 
-Write-Host "==> starting API $ApiExe run (bind $($env:NETVAN_API_BIND))"
+Write-Host "==> starting API $ApiExe run (bind $($env:ALAMUT_API_BIND))"
 $api = Start-Process -FilePath $ApiExe -ArgumentList @('run') `
   -WorkingDirectory $ApiWorkingDir -PassThru -WindowStyle Hidden
 
@@ -585,8 +585,8 @@ function Write-ServiceXml([string]$BinaryPath, [string]$DistPath, [int]$ApiPort,
   <executable>$psEsc</executable>
   <arguments>$argsEsc</arguments>
   <workingdirectory>$wdEsc</workingdirectory>
-  <env name="NETVAN_API_BIND" value="$bindEsc"/>
-  <env name="NETVAN_API_DATA_DIR" value="$dataEsc"/>
+  <env name="ALAMUT_API_BIND" value="$bindEsc"/>
+  <env name="ALAMUT_API_DATA_DIR" value="$dataEsc"/>
   <logpath>$dataEsc</logpath>
   <log mode="roll-by-size">
     <sizeThreshold>10240</sizeThreshold>
@@ -602,7 +602,7 @@ function Write-ServiceXml([string]$BinaryPath, [string]$DistPath, [int]$ApiPort,
 }
 
 function Invoke-Winsw([string[]]$WinArgs) {
-  # Config is Netvan.xml beside Netvan.exe (same basename) — do not pass XML path.
+  # Config is Alamut.xml beside Alamut.exe (same basename) — do not pass XML path.
   & $WinswPath @WinArgs
   if ($LASTEXITCODE -ne 0) {
     throw "winsw $($WinArgs -join ' ') failed ($LASTEXITCODE)"

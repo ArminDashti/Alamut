@@ -5,24 +5,24 @@ alwaysApply: true
 
 # Reinstall after code change
 
-After any change to **netvan-api** code that affects the running Windows service, the agent **must** run the reinstall script before telling the user the change is live.
+After any change to **alamut-api** code that affects the running Windows service, the agent **must** run the reinstall script before telling the user the change is live.
 
 Do not skip this. Do not only restart. Remove the old service version and install the new build.
 
 ## Script
 
 ```powershell
-# From netvan-api repo root; requires Administrator
+# From alamut-api repo root; requires Administrator
 powershell -ExecutionPolicy Bypass -File .\scripts\reinstall-windows-service.ps1
 ```
 
 What it does:
 
-1. `cargo build -p netvan-api --release`
+1. `cargo build -p alamut-api --release`
 2. Stop the service
-3. `netvan-api.exe uninstall` (remove old version)
-4. `netvan-api.exe install` (install new binary)
-5. `netvan-api.exe start` + `status`
+3. `alamut-api.exe uninstall` (remove old version)
+4. `alamut-api.exe install` (install new binary)
+5. `alamut-api.exe start` + `status`
 
 ## When to run
 
@@ -35,7 +35,7 @@ Run without waiting to be asked when you changed:
 ## When not to run
 
 1. Docs-only, comments-only, or unused files
-2. **netvan-webui**-only edits (cold rebuild/run WebUI per `rebuild-edited-section-only.mdc`; no Windows service)
+2. **alamut-webui**-only edits (cold rebuild/run WebUI per `rebuild-edited-section-only.mdc`; no Windows service)
 3. You already ran this script successfully in the same turn for the same change
 4. Foreground debug only (`cargo run -- run`) when the user explicitly asked not to touch the Windows service
 

@@ -1,10 +1,10 @@
 # Optional GNU linker when building with --target x86_64-pc-windows-gnu.
 # Do not force that target here: only MSVC is installed on many Windows hosts
 # (rustup default: x86_64-pc-windows-msvc). Prefer:
-#   cargo build -p netvan-api --release
+#   cargo build -p alamut-api --release
 # or explicitly:
-#   cargo build -p netvan-api --release --target x86_64-pc-windows-msvc
-#   cargo build -p netvan-api --release --target x86_64-pc-windows-gnu
+#   cargo build -p alamut-api --release --target x86_64-pc-windows-msvc
+#   cargo build -p alamut-api --release --target x86_64-pc-windows-gnu
 
 [target.x86_64-pc-windows-gnu]
 linker = "x86_64-w64-mingw32-gcc"

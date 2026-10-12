@@ -1,8 +1,8 @@
-# Code signing & hashing — Netvan (Dashti Technologies LLC)
+# Code signing & hashing — Alamut (Dashti Technologies LLC)
 
 ## What this does
 
-1. **Version resource (build time):** `netvan-api` / `netvan-cli` embed
+1. **Version resource (build time):** `alamut-api` / `alamut-cli` embed
    `CompanyName=Dashti Technologies LLC`, product name, file description,
    copyright, and file/product version via `winres` in `build.rs`.
    Unsigned EXEs with empty CompanyName/FileVersion are a top SmartScreen /
@@ -22,27 +22,27 @@
    OV builds reputation over time). Export as PFX or install in
    `CurrentUser\My` on the build machine.
 2. Install **Windows SDK or VS Build Tools** so `signtool.exe` exists, or set:
-   `$env:NETVAN_SIGNTOOL='C:\path\to\signtool.exe'`
+   `$env:ALAMUT_SIGNTOOL='C:\path\to\signtool.exe'`
 3. For PFX flows (CI):
-   `$env:NETVAN_PFX_PATH='C:\certs\dashti.pfx'`
-   `$env:NETVAN_PFX_PASSWORD='<secret>'` (never commit this).
+   `$env:ALAMUT_PFX_PATH='C:\certs\dashti.pfx'`
+   `$env:ALAMUT_PFX_PASSWORD='<secret>'` (never commit this).
 
 ## Usage
 
 ```powershell
 # Release: sign + hash (fails if no cert — use in CI)
-.\scripts\Sign-Binaries.ps1 -Files .\release\staging\netvan-api.exe, .\release\NetvaSetup.exe -RequireSignature
+.\scripts\Sign-Binaries.ps1 -Files .\release\staging\alamut-api.exe, .\release\NetvaSetup.exe -RequireSignature
 
 # Dev machine without cert: hashes only, never fails
-.\scripts\Sign-Binaries.ps1 -Files .\release\staging\netvan-api.exe
+.\scripts\Sign-Binaries.ps1 -Files .\release\staging\alamut-api.exe
 
 # Verify later / on customer machine
-.\scripts\Verify-Hash.ps1 -Files .\release\staging\netvan-api.exe
+.\scripts\Verify-Hash.ps1 -Files .\release\staging\alamut-api.exe
 .\scripts\Verify-Hash.ps1 -Manifest .\release\staging\SHA256SUMS.txt
 ```
 
 `scripts/install-win-x64.ps1` already calls `Sign-Binaries.ps1` best-effort
-after copying `Netvan.exe`, so installs always leave a `.sha256` next to the
+after copying `Alamut.exe`, so installs always leave a `.sha256` next to the
 binary even when the build box has no cert.
 
 ## Current machine status (verified 2026-09-30)
@@ -55,7 +55,7 @@ binary even when the build box has no cert.
   SmartScreen/Defender still treat the binary as unknown publisher.
 - Action needed for real AV/SmartScreen benefit: import a **public CA-issued
   OV or EV code-signing cert** for Dashti Technologies LLC into
-  `CurrentUser\My` (or point `NETVAN_PFX_PATH` at its PFX). No script changes
+  `CurrentUser\My` (or point `ALAMUT_PFX_PATH` at its PFX). No script changes
   needed — `Sign-Binaries.ps1` picks it up automatically (newest valid
   code-signing cert matching the subject wins).
 

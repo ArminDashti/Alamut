@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/docs/configuration-schema.json",
-  "productName": "Netvan",
+  "productName": "Alamut",
   "directories": {
     "output": "release",
     "app": "."
@@ -28,6 +28,6 @@
     "allowToChangeInstallationDirectory": true,
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
-    "shortcutName": "Netvan"
+    "shortcutName": "Alamut"
   }
 }

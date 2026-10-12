@@ -1,6 +1,6 @@
-# netvan-api HTTP / WebSocket
+# alamut-api HTTP / WebSocket
 
-Localhost API for **netvan-webui**. Collectors and tools run only inside the `netvan-api` Windows service.
+Localhost API for **alamut-webui**. Collectors and tools run only inside the `alamut-api` Windows service.
 
 Default bind: `127.0.0.1:8000`
 
@@ -8,9 +8,9 @@ Default bind: `127.0.0.1:8000`
 
 | Method | Path | Notes |
 |--------|------|-------|
-| GET | `/api/health` | `{ "ok": true, "service": "netvan-api" }` |
+| GET | `/api/health` | `{ "ok": true, "service": "alamut-api" }` |
 | GET | `/api/data-dir` | `{ "path": "..." }` |
-| POST | `/api/rpc` | Body = `RpcRequest`; response = `RpcResponse` (same shapes as desktop Netvan) |
+| POST | `/api/rpc` | Body = `RpcRequest`; response = `RpcResponse` (same shapes as desktop Alamut) |
 | WS | `/api/ws/tools` | Live tools streams |
 
 ## RPC methods (`POST /api/rpc`)
@@ -67,5 +67,5 @@ Server → client (tagged `type`): `ping_line`, `ping_done`, `traceroute_hop`, `
 
 ## Data directory
 
-Default: `%ProgramData%\Netvan\NetvanApi\netvan-web.db`  
-Override: `NETVAN_API_DATA_DIR`
+Default: `%ProgramData%\Alamut\AlamutApi\alamut-web.db`  
+Override: `ALAMUT_API_DATA_DIR`

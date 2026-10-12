@@ -1,15 +1,15 @@
-/** Empty = same origin (Vite proxies /api → netvan-api in dev). Override with VITE_NETVAN_API_URL. */
+/** Empty = same origin (Vite proxies /api → alamut-api in dev). Override with VITE_ALAMUT_API_URL. */
 function resolveApiBase(): string {
-  const env = (import.meta.env.VITE_NETVAN_API_URL as string | undefined)?.trim();
+  const env = (import.meta.env.VITE_ALAMUT_API_URL as string | undefined)?.trim();
   if (env) return env.replace(/\/$/, "");
 
   // Electron desktop wrapper: ask the main process for the configured API URL
-  // (respects --api-url=<host:port> and NETVAN_API_URL). Falls back to the
+  // (respects --api-url=<host:port> and ALAMUT_API_URL). Falls back to the
   // default if the bridge is unavailable (e.g. running the built PWA in a
   // browser).
-  if (typeof window !== "undefined" && window.netvan?.getApiUrl) {
+  if (typeof window !== "undefined" && window.alamut?.getApiUrl) {
     try {
-      const cached = window.netvan.getApiUrlSync?.();
+      const cached = window.alamut.getApiUrlSync?.();
       if (cached) return cached.replace(/\/$/, "");
     } catch {
       // ignore synchronous bridge failures; async fallback below

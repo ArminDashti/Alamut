@@ -1,12 +1,12 @@
 # Alamut CLI
 
-The `alamut` CLI provides a unified interface for managing the Netvan Windows service
+The `alamut` CLI provides a unified interface for managing the Alamut Windows service
 plus an interactive, colorful terminal dashboard (`alamut tui`).
 
 ## Interactive TUI
 
 `alamut-cli` is a full-screen, modern-colorful terminal UI (ratatui) that reads live
-data from a running Netvan API over JSON-RPC (`POST /api/rpc`).
+data from a running Alamut API over JSON-RPC (`POST /api/rpc`).
 
 ### Launch
 
@@ -20,8 +20,8 @@ alamut-cli --api http://127.0.0.1:8000
 alamut-cli --poll-ms 1000
 ```
 
-Environment overrides: `NETVAN_API_URL` (or `NETVAN_API_BASE`) for the endpoint,
-`NETVAN_API_BIND` as a fallback (rendered as `http://<bind>`).
+Environment overrides: `ALAMUT_API_URL` (or `ALAMUT_API_BASE`) for the endpoint,
+`ALAMUT_API_BIND` as a fallback (rendered as `http://<bind>`).
 
 Headless connectivity check (prints the overview snapshot as JSON, exit code 1 if
 the API cannot be reached):
@@ -33,7 +33,7 @@ alamut-cli --dump --api http://127.0.0.1:8000
 Build it:
 
 ```powershell
-cd netvan-api
+cd alamut-api
 cargo build --release -p alamut-cli
 ```
 
@@ -100,11 +100,11 @@ alamut <command>
 ## Commands
 
 ### Service Management
-- `alamut service start` - Start the Netvan Windows service
-- `alamut service stop` - Stop the Netvan Windows service
-- `alamut service restart` - Restart the Netvan Windows service
+- `alamut service start` - Start the Alamut Windows service
+- `alamut service stop` - Stop the Alamut Windows service
+- `alamut service restart` - Restart the Alamut Windows service
 - `alamut service status` - Show service install/running status
-- `alamut install` - Install the Netvan Windows service
+- `alamut install` - Install the Alamut Windows service
 
 ### App
 - `alamut doctor` - Run diagnostics (binaries, service, API health, data dir, WebUI, hosts entry)
@@ -159,8 +159,8 @@ alamut help
 
 ## How It Works
 
-The `alamut` CLI is a wrapper that delegates to the `netvan-api` binary. It:
-1. Locates the `netvan-api.exe` in the project's build directory
+The `alamut` CLI is a wrapper that delegates to the `alamut-api` binary. It:
+1. Locates the `alamut-api.exe` in the project's build directory
 2. Delegates service commands to the native Windows service implementation
 3. Provides additional convenience commands like `doctor` for diagnostics
 
@@ -168,17 +168,17 @@ The `alamut` CLI is a wrapper that delegates to the `netvan-api` binary. It:
 
 - Windows 10 or later
 - PowerShell 5.1 or later
-- `netvan-api.exe` built from the `netvan-api` crate
+- `alamut-api.exe` built from the `alamut-api` crate
 
-## Building netvan-api
+## Building alamut-api
 
-If `netvan-api.exe` is not found, build it:
+If `alamut-api.exe` is not found, build it:
 ```powershell
-cd netvan-api
+cd alamut-api
 cargo build --release
 ```
 
 The CLI will look for the binary in:
-- `netvan-api/target/release/netvan-api.exe`
-- `netvan-api/target/x86_64-pc-windows-gnu/release/netvan-api.exe`
-- `netvan-api/target/x86_64-pc-windows-msvc/release/netvan-api.exe`
+- `alamut-api/target/release/alamut-api.exe`
+- `alamut-api/target/x86_64-pc-windows-gnu/release/alamut-api.exe`
+- `alamut-api/target/x86_64-pc-windows-msvc/release/alamut-api.exe`

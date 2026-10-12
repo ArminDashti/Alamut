@@ -13,9 +13,9 @@ After any **code** edit, refresh the running stack on this machine — but **onl
 
 | Section | Typical paths | Refresh |
 |---------|---------------|---------|
-| **API** | `netvan-api` handlers, routes, RPC, WS, collectors, config, deps, crates (except pure DB schema — see DB) | Reinstall Windows service only |
-| **DB** | `netvan-api/**/db.rs`, schema SQL, live SQLite under the API data dir | Update DB only |
-| **WebUI** | `netvan-webui` (`src/`, Vite config, UI assets) | Stop, rebuild, cold-run WebUI only |
+| **API** | `alamut-api` handlers, routes, RPC, WS, collectors, config, deps, crates (except pure DB schema — see DB) | Reinstall Windows service only |
+| **DB** | `alamut-api/**/db.rs`, schema SQL, live SQLite under the API data dir | Update DB only |
+| **WebUI** | `alamut-webui` (`src/`, Vite config, UI assets) | Stop, rebuild, cold-run WebUI only |
 
 Multiple sections in one turn → run each matching refresh once. Still skip rebuild for sections with no edits.
 
@@ -24,7 +24,7 @@ Multiple sections in one turn → run each matching refresh once. Still skip reb
 When API binary code changed:
 
 ```powershell
-# From netvan-api root; requires Administrator
+# From alamut-api root; requires Administrator
 powershell -ExecutionPolicy Bypass -File .\scripts\reinstall-windows-service.ps1
 ```
 
@@ -36,7 +36,7 @@ When only DB/schema or live SQLite data changed:
 
 1. Prefer applying the schema/data change without rebuilding WebUI.
 2. Schema lives in the API binary (`db.rs` `SCHEMA`, applied on DB open). Shipping new schema code requires an API reinstall (same script as above) so the new `SCHEMA` runs — still **do not** rebuild WebUI unless WebUI also changed.
-3. Pure live-DB data fixes (SQL against `netvan-web.db` / data dir): change the DB only; do not reinstall API or rebuild WebUI unless those also changed.
+3. Pure live-DB data fixes (SQL against `alamut-web.db` / data dir): change the DB only; do not reinstall API or rebuild WebUI unless those also changed.
 4. Do not wipe the DB unless the user explicitly asked for a reset.
 5. Confirm both API and WebUI are running afterward.
 
@@ -45,7 +45,7 @@ When only DB/schema or live SQLite data changed:
 When WebUI code changed:
 
 1. Stop and remove the current WebUI process (whatever is bound to `127.0.0.1:8001`). Do not rely on HMR.
-2. From `netvan-webui`: `npm run build`
+2. From `alamut-webui`: `npm run build`
 3. Start a fresh server on the usual port, e.g. `npx vite preview --host 127.0.0.1 --port 8001` (or project-equivalent cold serve on `8001`)
 4. Never uninstall/reinstall the API service for WebUI-only edits — but confirm the API service is running; reinstall/start it only if it is down and the user needs the stack.
 

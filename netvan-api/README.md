@@ -1,8 +1,8 @@
-# netvan-api
+# alamut-api
 
-Local Windows service that owns Netvan collectors, SQLite history, and a localhost JSON-RPC + WebSocket API for **netvan-webui**.
+Local Windows service that owns Alamut collectors, SQLite history, and a localhost JSON-RPC + WebSocket API for **alamut-webui**.
 
-Does **not** modify the desktop [Netvan](https://github.com/ArminDashti/netvan) app. Uses a separate data directory so both can coexist.
+Does **not** modify the desktop [Alamut](https://github.com/ArminDashti/alamut) app. Uses a separate data directory so both can coexist.
 
 ## Requirements
 
@@ -13,32 +13,32 @@ Does **not** modify the desktop [Netvan](https://github.com/ArminDashti/netvan) 
 ## Build
 
 ```powershell
-cargo build -p netvan-api --release
+cargo build -p alamut-api --release
 ```
 
-Binary: `target\release\netvan-api.exe`
+Binary: `target\release\alamut-api.exe`
 
 ## CLI
 
 ```text
-netvan-api.exe install
-netvan-api.exe uninstall
-netvan-api.exe start
-netvan-api.exe stop
-netvan-api.exe run
-netvan-api.exe status
+alamut-api.exe install
+alamut-api.exe uninstall
+alamut-api.exe start
+alamut-api.exe stop
+alamut-api.exe run
+alamut-api.exe status
 ```
 
 | Command | Purpose |
 |---------|---------|
-| `install` | Register Windows service named **`netvan-api`** (auto-start, restart on failure) |
+| `install` | Register Windows service named **`alamut-api`** (auto-start, restart on failure) |
 | `uninstall` | Remove the service |
 | `start` / `stop` | Control the service |
 | `run` | Foreground mode (debug) |
 | `status` | Installed? Running/Stopped? |
 
-SCM **service name:** `netvan-api`  
-**Display name:** Netvan API
+SCM **service name:** `alamut-api`  
+**Display name:** Alamut API
 
 ## Listen address
 
@@ -46,10 +46,10 @@ Default: `http://127.0.0.1:8000` (localhost only)
 
 | Env | Default |
 |-----|---------|
-| `NETVAN_API_BIND` | `127.0.0.1:8000` |
-| `NETVAN_API_DATA_DIR` | `%ProgramData%\Netvan\NetvanApi\` |
+| `ALAMUT_API_BIND` | `127.0.0.1:8000` |
+| `ALAMUT_API_DATA_DIR` | `%ProgramData%\Alamut\AlamutApi\` |
 
-SQLite file: `netvan-web.db` under the data dir.
+SQLite file: `alamut-web.db` under the data dir.
 
 ## HTTP API
 
@@ -77,7 +77,7 @@ Server streams tagged events (`ping_line`, `traceroute_hop`, `speedtest_progress
 ## Dev
 
 ```powershell
-cargo run -p netvan-api -- run
+cargo run -p alamut-api -- run
 ```
 
-Then point **netvan-webui** at `http://127.0.0.1:8000`.
+Then point **alamut-webui** at `http://127.0.0.1:8000`.

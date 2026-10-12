@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import netvanMark from "@/assets/brand/netvan-mark.png";
+import alamutMark from "@/assets/brand/alamut-mark.png";
 import {
   AppWindow,
   ChevronDown,
@@ -145,8 +145,8 @@ export function AppShell() {
             aria-hidden="true"
             className="block h-6 w-8 shrink-0 bg-[var(--color-primary)]"
             style={{
-              WebkitMaskImage: `url(${netvanMark})`,
-              maskImage: `url(${netvanMark})`,
+              WebkitMaskImage: `url(${alamutMark})`,
+              maskImage: `url(${alamutMark})`,
               WebkitMaskSize: "contain",
               maskSize: "contain",
               WebkitMaskRepeat: "no-repeat",
@@ -156,7 +156,7 @@ export function AppShell() {
             }}
           />
           <div>
-            <div className="text-sm font-semibold tracking-wide">Netvan</div>
+            <div className="text-sm font-semibold tracking-wide">Alamut</div>
             <div className="text-[11px] text-[var(--color-muted-foreground)]">
               {apiOk === false ? "API offline" : "Network Monitor"}
             </div>
@@ -296,7 +296,7 @@ export function AppShell() {
                 apiOk ? "bg-[var(--color-success)]" : "bg-[var(--color-destructive)]",
               )}
             />
-            {apiOk ? "netvan-api connected" : "waiting for netvan-api"}
+            {apiOk ? "alamut-api connected" : "waiting for alamut-api"}
           </div>
           Created by Armin Dashti
         </div>

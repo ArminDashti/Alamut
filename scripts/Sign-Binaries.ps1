@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Authenticode-sign Netvan binaries for 'Dashti Technologies LLC' + emit SHA256 sidecars.
+  Authenticode-sign Alamut binaries for 'Dashti Technologies LLC' + emit SHA256 sidecars.
 
 .DESCRIPTION
   Signs each file in -Files with an Authenticode code-signing certificate whose
@@ -14,14 +14,14 @@
   in CI/release to fail instead of skipping.
 
   Certificate sources (in order):
-    1. PFX file: -PfxPath or $env:NETVAN_PFX_PATH, password in $env:NETVAN_PFX_PASSWORD
+    1. PFX file: -PfxPath or $env:ALAMUT_PFX_PATH, password in $env:ALAMUT_PFX_PASSWORD
     2. Cert store: CurrentUser\My then LocalMachine\My, subject contains -CertSubject,
        valid dates + code-signing EKU (1.3.6.1.5.5.7.3.3), newest first.
 
 .EXAMPLE
-  .\scripts\Sign-Binaries.ps1 -Files .\release\staging\netvan-api.exe, .\release\NetvaSetup.exe
+  .\scripts\Sign-Binaries.ps1 -Files .\release\staging\alamut-api.exe, .\release\NetvaSetup.exe
   .\scripts\Sign-Binaries.ps1 -Files $exe -RequireSignature
-  $env:NETVAN_PFX_PATH='C:\certs\dashti.pfx'; .\scripts\Sign-Binaries.ps1 -Files $exe
+  $env:ALAMUT_PFX_PATH='C:\certs\dashti.pfx'; .\scripts\Sign-Binaries.ps1 -Files $exe
 #>
 
 [CmdletBinding()]
@@ -31,11 +31,11 @@ param(
 
   [string]$CertSubject = 'Dashti Technologies LLC',
 
-  [string]$PfxPath = $env:NETVAN_PFX_PATH,
+  [string]$PfxPath = $env:ALAMUT_PFX_PATH,
 
   [string]$TimestampServer = 'http://timestamp.digicert.com',
 
-  [string]$Description = 'Netvan by Dashti Technologies LLC',
+  [string]$Description = 'Alamut by Dashti Technologies LLC',
 
   [string]$DescriptionUrl = '',
 
@@ -47,8 +47,8 @@ param(
 $ErrorActionPreference = 'Stop'
 
 function Find-Signtool {
-  if ($env:NETVAN_SIGNTOOL -and (Test-Path -LiteralPath $env:NETVAN_SIGNTOOL)) {
-    return $env:NETVAN_SIGNTOOL
+  if ($env:ALAMUT_SIGNTOOL -and (Test-Path -LiteralPath $env:ALAMUT_SIGNTOOL)) {
+    return $env:ALAMUT_SIGNTOOL
   }
   try {
     $cmd = Get-Command signtool.exe -ErrorAction SilentlyContinue
@@ -128,10 +128,10 @@ if (-not $usePfx) {
 }
 
 if (-not $signtool) {
-  $msg = 'signtool.exe not found. Install Windows SDK or VS Build Tools, or set $env:NETVAN_SIGNTOOL.'
+  $msg = 'signtool.exe not found. Install Windows SDK or VS Build Tools, or set $env:ALAMUT_SIGNTOOL.'
   if ($RequireSignature) { throw $msg } else { Write-Warning "$msg Skipping signing; writing hashes only." }
 } elseif (-not $usePfx -and -not $cert) {
-  $msg = "No code-signing certificate found for subject '*$CertSubject*'. Install the Dashti Technologies LLC cert in CurrentUser\My (or set NETVAN_PFX_PATH)."
+  $msg = "No code-signing certificate found for subject '*$CertSubject*'. Install the Dashti Technologies LLC cert in CurrentUser\My (or set ALAMUT_PFX_PATH)."
   if ($RequireSignature) { throw $msg } else { Write-Warning "$msg Skipping signing; writing hashes only." }
 } else {
   foreach ($f in $Files) {
@@ -140,7 +140,7 @@ if (-not $signtool) {
     if ($DescriptionUrl) { $args += @('/du', $DescriptionUrl) }
     if ($usePfx) {
       $args += @('/f', (Resolve-Path -LiteralPath $PfxPath).Path)
-      if ($env:NETVAN_PFX_PASSWORD) { $args += @('/p', $env:NETVAN_PFX_PASSWORD) }
+      if ($env:ALAMUT_PFX_PASSWORD) { $args += @('/p', $env:ALAMUT_PFX_PASSWORD) }
     } else {
       $args += @('/n', $CertSubject, '/a')
     }

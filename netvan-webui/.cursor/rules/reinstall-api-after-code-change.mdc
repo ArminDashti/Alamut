@@ -1,27 +1,27 @@
 ---
-description: After netvan-api code changes, reinstall the Windows service via the API script
+description: After alamut-api code changes, reinstall the Windows service via the API script
 alwaysApply: true
 ---
 
 # Reinstall API after code change
 
-When this agent changes **netvan-api** (sibling repo), it must reinstall the Windows service — remove the old version and install the new build — before saying the change is live.
+When this agent changes **alamut-api** (sibling repo), it must reinstall the Windows service — remove the old version and install the new build — before saying the change is live.
 
-## Script (in netvan-api)
+## Script (in alamut-api)
 
 ```powershell
-# From C:\Users\armin\GitHub\netvan-api; requires Administrator
+# From C:\Users\armin\GitHub\alamut-api; requires Administrator
 powershell -ExecutionPolicy Bypass -File .\scripts\reinstall-windows-service.ps1
 ```
 
 ## When to run
 
-1. Any turn that edited netvan-api code that ships in the service binary
-2. Same conditions as `netvan-api/.cursor/rules/reinstall-after-code-change.mdc`
+1. Any turn that edited alamut-api code that ships in the service binary
+2. Same conditions as `alamut-api/.cursor/rules/reinstall-after-code-change.mdc`
 
 ## When not to run
 
-1. **netvan-webui**-only edits (cold rebuild/run WebUI per `rebuild-edited-section-only.mdc`; do not reinstall API)
+1. **alamut-webui**-only edits (cold rebuild/run WebUI per `rebuild-edited-section-only.mdc`; do not reinstall API)
 2. Docs-only or comment-only API edits
 3. Script already succeeded this turn for the same change
 

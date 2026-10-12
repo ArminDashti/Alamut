@@ -1,0 +1,32 @@
+[package]
+name = "alamut-api"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Alamut Windows service — collectors + localhost JSON-RPC / WebSocket API"
+
+[[bin]]
+name = "alamut-api"
+path = "src/main.rs"
+
+[dependencies]
+alamut-core = { workspace = true }
+alamut-collectors = { workspace = true }
+anyhow = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+clap = { version = "4", features = ["derive"] }
+axum = { version = "0.8", features = ["ws"] }
+tower-http = { version = "0.6", features = ["cors", "fs"] }
+futures-util = "0.3"
+tower = "0.5"
+
+[target.'cfg(windows)'.dependencies]
+windows-service = "0.7"
+
+[build-dependencies]
+winres = "0.1"

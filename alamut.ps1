@@ -1,10 +1,10 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Alamut CLI - manage the Netvan service + headless stats (works despite the GUI).
+  Alamut CLI - manage the Alamut service + headless stats (works despite the GUI).
 
 .DESCRIPTION
-  Global CLI wrapper. Service commands delegate to netvan-api.exe;
+  Global CLI wrapper. Service commands delegate to alamut-api.exe;
   stats commands (overview/cpu/memory/disk/network/os/machine/live)
   delegate to alamut-cli.exe (JSON-RPC, with local fallback when the
   API is down). Native wrapper commands: doctor/version/remove/update/webui/help.
@@ -31,24 +31,24 @@ $ErrorActionPreference = 'Stop'
 
 # Resolve paths
 $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-if (Test-Path (Join-Path $ScriptRoot 'netvan-api')) {
+if (Test-Path (Join-Path $ScriptRoot 'alamut-api')) {
   $ProjectRoot = $ScriptRoot
 } else {
   $ProjectRoot = (Resolve-Path (Join-Path $ScriptRoot '..')).Path
 }
-$ApiRoot = Join-Path $ProjectRoot 'netvan-api'
+$ApiRoot = Join-Path $ProjectRoot 'alamut-api'
 
-function Get-NetvanApiExe {
+function Get-AlamutApiExe {
   $candidates = @(
-    (Join-Path $ApiRoot 'target\release\netvan-api.exe'),
-    (Join-Path $ApiRoot 'target\x86_64-pc-windows-gnu\release\netvan-api.exe'),
-    (Join-Path $ApiRoot 'target\x86_64-pc-windows-msvc\release\netvan-api.exe')
+    (Join-Path $ApiRoot 'target\release\alamut-api.exe'),
+    (Join-Path $ApiRoot 'target\x86_64-pc-windows-gnu\release\alamut-api.exe'),
+    (Join-Path $ApiRoot 'target\x86_64-pc-windows-msvc\release\alamut-api.exe')
   )
   foreach ($c in $candidates) {
     if (Test-Path -LiteralPath $c) { return (Resolve-Path -LiteralPath $c).Path }
   }
   # Installed copy?
-  $installed = Join-Path $env:LOCALAPPDATA 'Netvan\Netvan.exe'
+  $installed = Join-Path $env:LOCALAPPDATA 'Alamut\Alamut.exe'
   if (Test-Path -LiteralPath $installed) { return $installed }
   return $null
 }
@@ -78,9 +78,9 @@ function Get-WrapperVersion {
 }
 
 function Get-ApiBase {
-  if ($env:NETVAN_API_URL -and $env:NETVAN_API_URL.Trim()) { return $env:NETVAN_API_URL.Trim() }
-  if ($env:NETVAN_API_BASE -and $env:NETVAN_API_BASE.Trim()) { return $env:NETVAN_API_BASE.Trim() }
-  if ($env:NETVAN_API_BIND -and $env:NETVAN_API_BIND.Trim()) { return ("http://" + $env:NETVAN_API_BIND.Trim()) }
+  if ($env:ALAMUT_API_URL -and $env:ALAMUT_API_URL.Trim()) { return $env:ALAMUT_API_URL.Trim() }
+  if ($env:ALAMUT_API_BASE -and $env:ALAMUT_API_BASE.Trim()) { return $env:ALAMUT_API_BASE.Trim() }
+  if ($env:ALAMUT_API_BIND -and $env:ALAMUT_API_BIND.Trim()) { return ("http://" + $env:ALAMUT_API_BIND.Trim()) }
   return 'http://127.0.0.1:80'
 }
 
@@ -92,9 +92,9 @@ function Show-Help {
   Write-Host ""
   Write-Host "Service:"
   Write-Host "  service status    Show service install/running status"
-  Write-Host "  service start     Start the Netvan Windows service"
-  Write-Host "  service stop      Stop the Netvan Windows service"
-  Write-Host "  service restart   Restart the Netvan Windows service"
+  Write-Host "  service start     Start the Alamut Windows service"
+  Write-Host "  service stop      Stop the Alamut Windows service"
+  Write-Host "  service restart   Restart the Alamut Windows service"
   Write-Host "  install           Install the Windows service"
   Write-Host "  run               Run API in foreground (dev/console mode)"
   Write-Host ""
@@ -133,15 +133,15 @@ function Show-Help {
 }
 
 function Invoke-Doctor {
-  Write-Host "◆ NETVAN Doctor - running diagnostics..."
+  Write-Host "◆ ALAMUT Doctor - running diagnostics..."
   Write-Host ""
   $fail = 0
 
-  $apiExe = Get-NetvanApiExe
+  $apiExe = Get-AlamutApiExe
   if ($apiExe) {
-    Write-Host "[OK] netvan-api.exe found: $apiExe" -ForegroundColor Green
+    Write-Host "[OK] alamut-api.exe found: $apiExe" -ForegroundColor Green
   } else {
-    Write-Host "[FAIL] netvan-api.exe not found. Run: cd netvan-api; cargo build --release" -ForegroundColor Red
+    Write-Host "[FAIL] alamut-api.exe not found. Run: cd alamut-api; cargo build --release" -ForegroundColor Red
     $fail++
   }
 
@@ -149,35 +149,35 @@ function Invoke-Doctor {
   if ($cliExe) {
     Write-Host "[OK] alamut-cli.exe found: $cliExe" -ForegroundColor Green
   } else {
-    Write-Host "[INFO] alamut-cli.exe not found. Run: cd netvan-api; cargo build --release -p alamut-cli" -ForegroundColor Yellow
+    Write-Host "[INFO] alamut-cli.exe not found. Run: cd alamut-api; cargo build --release -p alamut-cli" -ForegroundColor Yellow
   }
 
-  $svc = Get-Service -Name 'Netvan' -ErrorAction SilentlyContinue
+  $svc = Get-Service -Name 'Alamut' -ErrorAction SilentlyContinue
   if ($svc) {
-    Write-Host "[OK] Service 'Netvan' found (Status: $($svc.Status))" -ForegroundColor Green
+    Write-Host "[OK] Service 'Alamut' found (Status: $($svc.Status))" -ForegroundColor Green
   } else {
-    Write-Host "[INFO] Service 'Netvan' not installed" -ForegroundColor Yellow
+    Write-Host "[INFO] Service 'Alamut' not installed" -ForegroundColor Yellow
   }
 
-  $dataDir = Join-Path $env:ProgramData 'Netvan\NetvanApi'
+  $dataDir = Join-Path $env:ProgramData 'Alamut\AlamutApi'
   if (Test-Path -LiteralPath $dataDir) {
     Write-Host "[OK] Data directory exists: $dataDir" -ForegroundColor Green
   } else {
     Write-Host "[INFO] Data directory not found: $dataDir" -ForegroundColor Yellow
   }
 
-  $webuiDist = Join-Path $ProjectRoot 'netvan-webui\dist'
+  $webuiDist = Join-Path $ProjectRoot 'alamut-webui\dist'
   if ((Test-Path -LiteralPath (Join-Path $webuiDist 'index.html'))) {
     Write-Host "[OK] Web UI build found: $webuiDist" -ForegroundColor Green
   } else {
-    Write-Host "[INFO] Web UI not built. Run: cd netvan-webui; npm install; npm run build" -ForegroundColor Yellow
+    Write-Host "[INFO] Web UI not built. Run: cd alamut-webui; npm install; npm run build" -ForegroundColor Yellow
   }
 
   # API health
   $base = Get-ApiBase
   try {
     $h = Invoke-RestMethod -Uri "$base/api/health" -TimeoutSec 5 -ErrorAction Stop
-    if ($h.ok -eq $true -or $h.service -eq 'Netvan') {
+    if ($h.ok -eq $true -or $h.service -eq 'Alamut') {
       Write-Host "[OK] API reachable at $base" -ForegroundColor Green
     } else {
       Write-Host "[INFO] API responded oddly at $base" -ForegroundColor Yellow
@@ -186,13 +186,13 @@ function Invoke-Doctor {
     Write-Host "[INFO] API not reachable at $base (start it: alamut run / alamut service start)" -ForegroundColor Yellow
   }
 
-  # hosts entry for netvan.local
+  # hosts entry for alamut.local
   try {
     $hosts = Get-Content "$env:SystemRoot\System32\drivers\etc\hosts" -ErrorAction Stop
-    if ($hosts -match 'netvan\.local') {
-      Write-Host "[OK] hosts entry for netvan.local present" -ForegroundColor Green
+    if ($hosts -match 'alamut\.local') {
+      Write-Host "[OK] hosts entry for alamut.local present" -ForegroundColor Green
     } else {
-      Write-Host "[INFO] hosts entry missing: add '127.0.0.1  netvan.local'" -ForegroundColor Yellow
+      Write-Host "[INFO] hosts entry missing: add '127.0.0.1  alamut.local'" -ForegroundColor Yellow
     }
   } catch {
     Write-Host "[INFO] could not read hosts file" -ForegroundColor Yellow
@@ -205,15 +205,15 @@ function Invoke-Doctor {
 
 function Invoke-Version {
   $v = Get-WrapperVersion
-  Write-Host "◆ NETVAN v$v"
-  $apiExe = Get-NetvanApiExe
+  Write-Host "◆ ALAMUT v$v"
+  $apiExe = Get-AlamutApiExe
   if ($apiExe) {
     try {
       $out = & $apiExe version 2>$null
-      if ($LASTEXITCODE -eq 0 -and $out) { Write-Host "  $out" } else { Write-Host "  netvan-api: $apiExe" }
-    } catch { Write-Host "  netvan-api: $apiExe" }
+      if ($LASTEXITCODE -eq 0 -and $out) { Write-Host "  $out" } else { Write-Host "  alamut-api: $apiExe" }
+    } catch { Write-Host "  alamut-api: $apiExe" }
   } else {
-    Write-Host "  netvan-api: not built"
+    Write-Host "  alamut-api: not built"
   }
   $cliExe = Get-AlamutCliExe
   if ($cliExe) {
@@ -229,11 +229,11 @@ function Invoke-Version {
 function Invoke-Remove {
   param([string[]]$Extra)
   $purge = $Extra -contains '--purge'
-  Write-Host "◆ NETVAN remove - stopping + uninstalling service..."
-  $apiExe = Get-NetvanApiExe
+  Write-Host "◆ ALAMUT remove - stopping + uninstalling service..."
+  $apiExe = Get-AlamutApiExe
   if (-not $apiExe) {
-    Write-Host "Error: netvan-api.exe not found. Nothing to uninstall via binary."
-    Write-Host "  cd netvan-api"
+    Write-Host "Error: alamut-api.exe not found. Nothing to uninstall via binary."
+    Write-Host "  cd alamut-api"
     Write-Host "  cargo build --release"
     exit 1
   }
@@ -241,12 +241,12 @@ function Invoke-Remove {
   & $apiExe uninstall
   $code = $LASTEXITCODE
   if ($purge) {
-    $dataDir = Join-Path $env:ProgramData 'Netvan\NetvanApi'
+    $dataDir = Join-Path $env:ProgramData 'Alamut\AlamutApi'
     if (Test-Path -LiteralPath $dataDir) {
       Write-Host "==> Purging data directory: $dataDir"
       Remove-Item -LiteralPath $dataDir -Recurse -Force -ErrorAction SilentlyContinue
     }
-    $installDir = Join-Path $env:LOCALAPPDATA 'Netvan'
+    $installDir = Join-Path $env:LOCALAPPDATA 'Alamut'
     if (Test-Path -LiteralPath $installDir) {
       $answer = Read-Host "Delete install dir $installDir ? [y/N]"
       if ($answer -match '^[Yy]') {
@@ -261,15 +261,15 @@ function Invoke-Remove {
 }
 
 function Invoke-Update {
-  Write-Host "◆ NETVAN update - rebuilding API + CLI + WebUI..."
-  $ApiDir = Join-Path $ProjectRoot 'netvan-api'
-  $WebuiDir = Join-Path $ProjectRoot 'netvan-webui'
-  $svc = Get-Service -Name 'Netvan' -ErrorAction SilentlyContinue
+  Write-Host "◆ ALAMUT update - rebuilding API + CLI + WebUI..."
+  $ApiDir = Join-Path $ProjectRoot 'alamut-api'
+  $WebuiDir = Join-Path $ProjectRoot 'alamut-webui'
+  $svc = Get-Service -Name 'Alamut' -ErrorAction SilentlyContinue
   $wasRunning = $svc -and ($svc.Status -eq 'Running')
 
   Push-Location $ApiDir
   try {
-    cargo build --release -p netvan-api -p alamut-cli
+    cargo build --release -p alamut-api -p alamut-cli
     if ($LASTEXITCODE -ne 0) { Write-Host "cargo build failed." -ForegroundColor Red; exit 1 }
   } finally { Pop-Location }
 
@@ -288,7 +288,7 @@ function Invoke-Update {
 
   if ($wasRunning) {
     Write-Host "==> Restarting service..."
-    $apiExe = Get-NetvanApiExe
+    $apiExe = Get-AlamutApiExe
     if ($apiExe) { & $apiExe stop; Start-Sleep -Seconds 2; & $apiExe start; exit $LASTEXITCODE }
   }
   Write-Host "Update complete." -ForegroundColor Green
@@ -304,7 +304,7 @@ function Invoke-WebUI {
   $url = $custom
   if (-not $url) {
     # Prefer the pretty hostname when the API answers there, else the API base.
-    $url = 'http://netvan.local'
+    $url = 'http://alamut.local'
     try {
       $r = Invoke-WebRequest -Uri $url -Method Head -TimeoutSec 3 -UseBasicParsing -ErrorAction Stop
       if ($r.StatusCode -ge 400) { throw 'bad status' }
@@ -322,7 +322,7 @@ function Invoke-Cli {
   $cliExe = Get-AlamutCliExe
   if (-not $cliExe) {
     Write-Host "Error: alamut-cli.exe not found. Build it first:"
-    Write-Host "  cd netvan-api"
+    Write-Host "  cd alamut-api"
     Write-Host "  cargo build --release -p alamut-cli"
     exit 1
   }
@@ -346,10 +346,10 @@ function Invoke-Cli {
 
 function Invoke-Api {
   param([string[]]$ApiArgs)
-  $apiExe = Get-NetvanApiExe
+  $apiExe = Get-AlamutApiExe
   if (-not $apiExe) {
-    Write-Host "Error: netvan-api.exe not found. Build it first:"
-    Write-Host "  cd netvan-api"
+    Write-Host "Error: alamut-api.exe not found. Build it first:"
+    Write-Host "  cd alamut-api"
     Write-Host "  cargo build --release"
     exit 1
   }
@@ -379,9 +379,9 @@ if ($Command -eq 'service') {
     'start'   { Invoke-Api @('start') }
     'stop'    { Invoke-Api @('stop') }
     'restart' {
-      Write-Host "==> Restarting Netvan service..."
-      $apiExe = Get-NetvanApiExe
-      if (-not $apiExe) { Write-Host "Error: netvan-api.exe not found."; exit 1 }
+      Write-Host "==> Restarting Alamut service..."
+      $apiExe = Get-AlamutApiExe
+      if (-not $apiExe) { Write-Host "Error: alamut-api.exe not found."; exit 1 }
       & $apiExe stop
       Start-Sleep -Seconds 2
       & $apiExe start

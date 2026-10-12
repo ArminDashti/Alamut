@@ -6,7 +6,7 @@ import electron from "vite-plugin-electron/simple";
 import path from "path";
 
 const base = process.env.VITE_BASE_PATH || "/";
-const apiProxyTarget = process.env.NETVAN_API_PROXY_TARGET ?? "http://127.0.0.1:8000";
+const apiProxyTarget = process.env.ALAMUT_API_PROXY_TARGET ?? "http://127.0.0.1:8000";
 const basePrefix = base.replace(/\/$/, "");
 
 const apiProxy = {
@@ -45,8 +45,8 @@ export default defineConfig({
       },
       includeAssets: ["vite.svg", "icons/*.png"],
       manifest: {
-        name: "Netvan",
-        short_name: "Netvan",
+        name: "Alamut",
+        short_name: "Alamut",
         description: "Local network monitor (display-only PWA)",
         theme_color: "#0b1220",
         background_color: "#0b1220",
@@ -95,7 +95,7 @@ export default defineConfig({
     port: Number(process.env.VITE_DEV_PORT ?? 8001),
     strictPort: true,
     host: process.env.VITE_DEV_HOST ?? "127.0.0.1",
-    allowedHosts: ["netvan.local", "netvan-api.local", "localhost", "127.0.0.1"],
+    allowedHosts: ["alamut.local", "alamut-api.local", "localhost", "127.0.0.1"],
     origin: process.env.VITE_DEV_ORIGIN,
     watch: {
       usePolling: process.env.CHOKIDAR_USEPOLLING === "true",

@@ -105,10 +105,10 @@ function IgnoreListEditor({
 }
 
 function OpenDataDirButton() {
-  const netvan = typeof window !== "undefined" ? (window as unknown as { netvan?: { openDataDir?: () => Promise<void> } }).netvan : undefined;
-  if (!netvan?.openDataDir) return null;
+  const alamut = typeof window !== "undefined" ? (window as unknown as { alamut?: { openDataDir?: () => Promise<void> } }).alamut : undefined;
+  if (!alamut?.openDataDir) return null;
   return (
-    <Button type="button" variant="outline" onClick={() => void netvan.openDataDir?.()}>
+    <Button type="button" variant="outline" onClick={() => void alamut.openDataDir?.()}>
       Open data directory
     </Button>
   );
@@ -193,7 +193,7 @@ export function SettingsPage() {
       setSettings(next);
       setMsg(
         next.start_ui_with_windows
-          ? "Flag saved (UI autostart is managed by the netvan-api Windows service / Phase 2 companion)"
+          ? "Flag saved (UI autostart is managed by the alamut-api Windows service / Phase 2 companion)"
           : "UI autostart flag cleared",
       );
     } catch (e) {
@@ -277,7 +277,7 @@ export function SettingsPage() {
               <CardHeader>
                 <CardTitle>Startup</CardTitle>
                 <CardDescription>
-                  Background collection runs in the <code className="text-xs">netvan-api</code>{" "}
+                  Background collection runs in the <code className="text-xs">alamut-api</code>{" "}
                   Windows service. This PWA only displays results.
                 </CardDescription>
               </CardHeader>
@@ -570,7 +570,7 @@ export function SettingsPage() {
                       github.com/armindashti
                     </a>
                   </p>
-                  <p>Netvan — local network monitor for Windows</p>
+                  <p>Alamut — local network monitor for Windows</p>
                 </div>
               </CardContent>
             </Card>

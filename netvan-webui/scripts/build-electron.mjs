@@ -1,5 +1,5 @@
 /**
- * Build the Electron desktop wrapper for netvan-webui.
+ * Build the Electron desktop wrapper for alamut-webui.
  *
  * Runs three phases sequentially so failures are visible:
  *   1. tsc (typecheck renderer + electron entries)

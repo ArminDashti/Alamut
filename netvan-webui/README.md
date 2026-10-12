@@ -1,13 +1,13 @@
-# netvan-webui
+# alamut-webui
 
-Display-only **PWA** for Netvan. Inspired by the desktop Netvan UI, rebuilt with React + Tailwind + Shadcn-style components.
+Display-only **PWA** for Alamut. Inspired by the desktop Alamut UI, rebuilt with React + Tailwind + Shadcn-style components.
 
-**Does not** run collectors, ping, traceroute, or speedtest in the browser. All work happens in **[netvan-api](https://github.com/ArminDashti/netvan-api)** (`127.0.0.1:8000`).
+**Does not** run collectors, ping, traceroute, or speedtest in the browser. All work happens in **[alamut-api](https://github.com/ArminDashti/alamut-api)** (`127.0.0.1:8000`).
 
 ## Requirements
 
 - Node.js 20+
-- Running `netvan-api` (`netvan-api.exe run` or Windows service `netvan-api`)
+- Running `alamut-api` (`alamut-api.exe run` or Windows service `alamut-api`)
 
 ## Setup
 
@@ -20,7 +20,7 @@ Open `http://127.0.0.1:8001`.
 
 Dev proxies `/api` (and `/api/ws/tools`) to `http://127.0.0.1:8000`, so the UI works over a single forwarded port.
 
-Optional absolute API origin: `VITE_NETVAN_API_URL=http://127.0.0.1:8000`
+Optional absolute API origin: `VITE_ALAMUT_API_URL=http://127.0.0.1:8000`
 
 ## PWA
 
@@ -31,7 +31,7 @@ npm run build
 npm run preview
 ```
 
-Install from the browser (“Install Netvan”) when served over localhost/HTTPS.
+Install from the browser (“Install Alamut”) when served over localhost/HTTPS.
 
 ## Scripts
 
@@ -44,6 +44,6 @@ Install from the browser (“Install Netvan”) when served over localhost/HTTPS
 ## Architecture
 
 ```
-Browser (this repo)  --POST /api/rpc-->  netvan-api service
+Browser (this repo)  --POST /api/rpc-->  alamut-api service
                      --WS /api/ws/tools-->  (live tool streams)
 ```

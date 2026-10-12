@@ -505,13 +505,6 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h2 className="text-2xl font-semibold tracking-tight">System Overview</h2>
-        <p className="text-sm text-[var(--color-muted-foreground)]">
-          A quick glance at your system&apos;s health
-        </p>
-      </div>
-
       {error && (
         <div className="rounded-md border border-[var(--color-destructive)]/40 bg-[var(--color-destructive)]/10 px-3 py-2 text-sm">
           {error}

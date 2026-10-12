@@ -36,7 +36,7 @@ export function ThermalPage() {
       {error && <p className="text-sm text-red-400">{error}</p>}
       {groups.length === 0 && !error && (
         <p className="text-sm text-[var(--color-muted-foreground)]">
-          No temperature sensors reported. Netvan tried LibreHardwareMonitor and the native Windows
+          No temperature sensors reported. Alamut tried LibreHardwareMonitor and the native Windows
           ACPI thermal interface, but this machine did not expose a readable temperature sensor.
         </p>
       )}

@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Verify SHA256 sidecars (.sha256 or SHA256SUMS.txt) for Netvan binaries.
+  Verify SHA256 sidecars (.sha256 or SHA256SUMS.txt) for Alamut binaries.
 
 .DESCRIPTION
   Recomputes SHA256 for each target file and compares against its sidecar hash.
@@ -9,7 +9,7 @@
   after downloading to prove the binary was not corrupted or tampered with.
 
 .EXAMPLE
-  .\scripts\Verify-Hash.ps1 -Files .\release\staging\netvan-api.exe
+  .\scripts\Verify-Hash.ps1 -Files .\release\staging\alamut-api.exe
   .\scripts\Verify-Hash.ps1 -Manifest .\release\staging\SHA256SUMS.txt
 #>
 

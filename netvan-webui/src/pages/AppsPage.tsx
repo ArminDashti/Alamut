@@ -11,20 +11,17 @@ import {
 import { AppUsageHeatmap } from "@/components/AppUsageHeatmap";
 import { HistoryFilter, customToTs } from "@/components/HistoryFilter";
 import { Card, CardContent } from "@/components/ui/card";
-import { UsagePeriodGrid } from "@/components/UsagePeriodGrid";
 import {
   rpc,
   type AppSettings,
   type AppUsageRow,
   type HistoryRange,
-  type NicInfo,
 } from "@/lib/api";
 import {
   aggregateGridSum,
   buildFullDayHourColumns,
   buildPeriodColumns,
 } from "@/lib/latencyPeriod";
-import { pickHighestTrafficNic } from "@/lib/pickHighestTrafficNic";
 import { cn, formatUsageGb } from "@/lib/utils";
 
 type SeriesPoint = {
@@ -171,7 +168,7 @@ export function AppsPage() {
       start_ts,
       end_ts,
       group_by: "app",
-      nic_id: nicId || null,
+      nic_id: null,
     };
     const [usage, appUsage, settings] = await Promise.all([
       rpc<{ type: "AppUsageSeries"; data: SeriesPoint[] }>({
@@ -199,7 +196,7 @@ export function AppsPage() {
           start_ts: null,
           end_ts: null,
           group_by: "app",
-          nic_id: nicId || null,
+          nic_id: null,
         },
       });
       setYesterdaySeries(y.data);

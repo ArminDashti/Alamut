@@ -1,15 +1,15 @@
 /**
- * Netvan Electron main process.
+ * Alamut Electron main process.
  *
- * Wraps the existing Vite/PWA renderer (the netvan-webui React app) in a
- * desktop window. The renderer talks to netvan-api over HTTP/WebSocket just
+ * Wraps the existing Vite/PWA renderer (the alamut-webui React app) in a
+ * desktop window. The renderer talks to alamut-api over HTTP/WebSocket just
  * like the browser PWA; this file only manages the window, the API health
  * probe, and a couple of IPC helpers used by Settings ("open data dir",
  * "open external URL").
  *
  * API origin is discovered in this order:
  *   1. --api-url=<host:port>  (passed by the CLI wrapper)
- *   2. NETVAN_API_URL env var
+ *   2. ALAMUT_API_URL env var
  *   3. http://127.0.0.1:8000
  */
 
@@ -25,7 +25,7 @@ function resolveApiUrl(): string {
     const v = argv[argv.length - 1].split("=", 2)[1];
     if (v) return v.replace(/\/$/, "");
   }
-  const env = process.env.NETVAN_API_URL || process.env.NETVAN_API_BASE;
+  const env = process.env.ALAMUT_API_URL || process.env.ALAMUT_API_BASE;
   if (env && env.trim()) return env.trim().replace(/\/$/, "");
   return "http://127.0.0.1:8000";
 }
@@ -49,7 +49,7 @@ function createWindow() {
     height: 820,
     minWidth: 980,
     minHeight: 640,
-    title: "Netvan",
+    title: "Alamut",
     backgroundColor: "#0b1220",
     trafficLightPosition: { x: 12, y: 12 },
     webPreferences: {
@@ -93,13 +93,13 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
 
-// ---- IPC helpers (renderer calls these via window.netvan.*) ----
+// ---- IPC helpers (renderer calls these via window.alamut.*) ----
 
-ipcMain.on("netvan:get-api-url", (e) => {
-  e.reply("netvan:api-url", resolveApiUrl());
+ipcMain.on("alamut:get-api-url", (e) => {
+  e.reply("alamut:api-url", resolveApiUrl());
 });
 
-ipcMain.on("netvan:open-data-dir", async (e) => {
+ipcMain.on("alamut:open-data-dir", async (e) => {
   const api = resolveApiUrl();
   try {
     const res = await fetch(`${api}/api/data-dir`);
@@ -111,18 +111,18 @@ ipcMain.on("netvan:open-data-dir", async (e) => {
     if (body.error) throw new Error(body.error);
   } catch (err) {
     dialog.showErrorBox(
-      "Netvan",
+      "Alamut",
       `Could not resolve data dir: ${(err as Error).message}`,
     );
   }
-  e.reply("netvan:data-dir-error");
+  e.reply("alamut:data-dir-error");
 });
 
-ipcMain.on("netvan:open-external", (_e, url: string) => {
+ipcMain.on("alamut:open-external", (_e, url: string) => {
   if (typeof url !== "string") return;
   if (url.startsWith("http://") || url.startsWith("https://")) {
     shell.openExternal(url);
   }
 });
 
-ipcMain.on("netvan:quit", () => app.quit());
+ipcMain.on("alamut:quit", () => app.quit());
