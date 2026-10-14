@@ -24,14 +24,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "alamut-api"
+version = "0.2.0"
+dependencies = [
+ "alamut-collectors",
+ "alamut-core",
+ "anyhow",
+ "axum",
+ "clap",
+ "futures-util",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tower",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "windows-service",
+ "winres",
+]
+
+[[package]]
 name = "alamut-cli"
 version = "0.2.0"
 dependencies = [
+ "alamut-core",
  "anyhow",
  "chrono",
  "clap",
  "crossterm",
- "alamut-core",
  "ratatui",
  "reqwest",
  "serde",
@@ -39,6 +60,43 @@ dependencies = [
  "sysinfo",
  "tokio",
  "winres",
+]
+
+[[package]]
+name = "alamut-collectors"
+version = "0.2.0"
+dependencies = [
+ "alamut-core",
+ "anyhow",
+ "chrono",
+ "dns-lookup",
+ "once_cell",
+ "parking_lot",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sysinfo",
+ "tokio",
+ "tracing",
+ "url",
+ "windows 0.58.0",
+ "wmi",
+]
+
+[[package]]
+name = "alamut-core"
+version = "0.2.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "directories",
+ "parking_lot",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+ "tracing",
+ "uuid",
 ]
 
 [[package]]
@@ -1164,64 +1222,6 @@ dependencies = [
  "log",
  "wasi",
  "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "alamut-api"
-version = "0.2.0"
-dependencies = [
- "anyhow",
- "axum",
- "clap",
- "futures-util",
- "alamut-collectors",
- "alamut-core",
- "serde",
- "serde_json",
- "tokio",
- "tower",
- "tower-http",
- "tracing",
- "tracing-subscriber",
- "windows-service",
- "winres",
-]
-
-[[package]]
-name = "alamut-collectors"
-version = "0.2.0"
-dependencies = [
- "anyhow",
- "chrono",
- "dns-lookup",
- "alamut-core",
- "once_cell",
- "parking_lot",
- "reqwest",
- "serde",
- "serde_json",
- "sysinfo",
- "tokio",
- "tracing",
- "url",
- "windows 0.58.0",
- "wmi",
-]
-
-[[package]]
-name = "alamut-core"
-version = "0.2.0"
-dependencies = [
- "anyhow",
- "chrono",
- "directories",
- "parking_lot",
- "rusqlite",
- "serde",
- "serde_json",
- "thiserror 2.0.19",
- "tracing",
- "uuid",
 ]
 
 [[package]]

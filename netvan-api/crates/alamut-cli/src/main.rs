@@ -122,6 +122,8 @@ enum Command {
         #[arg(long, default_value_t = 1000)]
         interval_ms: u64,
     },
+    /// Rebuild the API release, reinstall the Windows service and start it (needs Administrator)
+    Rebuild,
     /// Print version
     Version,
 }
@@ -172,6 +174,7 @@ async fn main() -> Result<()> {
             Command::Os { json } => cmds::cmd_os(&api, json).await,
             Command::MachineInfo { json, .. } => cmds::cmd_machine(&api, json).await,
             Command::Live { interval_ms } => cmds::cmd_live(api, interval_ms).await,
+            Command::Rebuild => cmds::cmd_rebuild().await,
             Command::Version => {
                 println!("alamut-cli {}", env!("CARGO_PKG_VERSION"));
                 Ok(())

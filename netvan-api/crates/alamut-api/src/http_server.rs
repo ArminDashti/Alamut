@@ -160,8 +160,16 @@ pub async fn run(shutdown: impl Future<Output = ()> + Send + 'static) -> Result<
 
     let bind = std::env::var("ALAMUT_API_BIND").unwrap_or_else(|_| DEFAULT_BIND.to_string());
     let addr: SocketAddr = bind.parse()?;
+    let listener = match tokio::net::TcpListener::bind(addr).await {
+        Ok(listener) => listener,
+        // ponytail: fallback is any free port via OS; the WebUI proxy and CLI still assume 8000.
+        Err(e) if e.kind() == std::io::ErrorKind::AddrInUse => {
+            tokio::net::TcpListener::bind(SocketAddr::new(addr.ip(), 0)).await?
+        }
+        Err(e) => return Err(e.into()),
+    };
+    let addr = listener.local_addr()?;
     info!("Alamut listening on http://{addr} (UI: http://alamut.local)");
-    let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown)
         .await?;

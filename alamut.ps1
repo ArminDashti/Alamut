@@ -31,12 +31,8 @@ $ErrorActionPreference = 'Stop'
 
 # Resolve paths
 $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-if (Test-Path (Join-Path $ScriptRoot 'alamut-api')) {
-  $ProjectRoot = $ScriptRoot
-} else {
-  $ProjectRoot = (Resolve-Path (Join-Path $ScriptRoot '..')).Path
-}
-$ApiRoot = Join-Path $ProjectRoot 'alamut-api'
+$ProjectRoot = $ScriptRoot  # launcher lives in repo root next to netvan-api / netvan-webui
+$ApiRoot = Join-Path $ProjectRoot 'netvan-api'
 
 function Get-AlamutApiExe {
   $candidates = @(
@@ -103,6 +99,7 @@ function Show-Help {
   Write-Host "  version           Print CLI + service binary versions"
   Write-Host "  remove [--purge]  Stop + uninstall service (purge also deletes data dir)"
   Write-Host "  update            Rebuild API+CLI+WebUI and restart the service if running"
+  Write-Host "  rebuild           Alias for update"
   Write-Host "  webui             Open the Web UI in the default browser"
   Write-Host "  help              Show this help message"
   Write-Host ""
@@ -141,7 +138,7 @@ function Invoke-Doctor {
   if ($apiExe) {
     Write-Host "[OK] alamut-api.exe found: $apiExe" -ForegroundColor Green
   } else {
-    Write-Host "[FAIL] alamut-api.exe not found. Run: cd alamut-api; cargo build --release" -ForegroundColor Red
+    Write-Host "[FAIL] alamut-api.exe not found. Run: cd netvan-api; cargo build --release" -ForegroundColor Red
     $fail++
   }
 
@@ -149,7 +146,7 @@ function Invoke-Doctor {
   if ($cliExe) {
     Write-Host "[OK] alamut-cli.exe found: $cliExe" -ForegroundColor Green
   } else {
-    Write-Host "[INFO] alamut-cli.exe not found. Run: cd alamut-api; cargo build --release -p alamut-cli" -ForegroundColor Yellow
+    Write-Host "[INFO] alamut-cli.exe not found. Run: cd netvan-api; cargo build --release -p alamut-cli" -ForegroundColor Yellow
   }
 
   $svc = Get-Service -Name 'Alamut' -ErrorAction SilentlyContinue
@@ -166,11 +163,11 @@ function Invoke-Doctor {
     Write-Host "[INFO] Data directory not found: $dataDir" -ForegroundColor Yellow
   }
 
-  $webuiDist = Join-Path $ProjectRoot 'alamut-webui\dist'
+  $webuiDist = Join-Path $ProjectRoot 'netvan-webui\dist'
   if ((Test-Path -LiteralPath (Join-Path $webuiDist 'index.html'))) {
     Write-Host "[OK] Web UI build found: $webuiDist" -ForegroundColor Green
   } else {
-    Write-Host "[INFO] Web UI not built. Run: cd alamut-webui; npm install; npm run build" -ForegroundColor Yellow
+    Write-Host "[INFO] Web UI not built. Run: cd netvan-webui; npm install; npm run build" -ForegroundColor Yellow
   }
 
   # API health
@@ -233,7 +230,7 @@ function Invoke-Remove {
   $apiExe = Get-AlamutApiExe
   if (-not $apiExe) {
     Write-Host "Error: alamut-api.exe not found. Nothing to uninstall via binary."
-    Write-Host "  cd alamut-api"
+    Write-Host "  cd netvan-api"
     Write-Host "  cargo build --release"
     exit 1
   }
@@ -262,8 +259,8 @@ function Invoke-Remove {
 
 function Invoke-Update {
   Write-Host "◆ ALAMUT update - rebuilding API + CLI + WebUI..."
-  $ApiDir = Join-Path $ProjectRoot 'alamut-api'
-  $WebuiDir = Join-Path $ProjectRoot 'alamut-webui'
+  $ApiDir = Join-Path $ProjectRoot 'netvan-api'
+  $WebuiDir = Join-Path $ProjectRoot 'netvan-webui'
   $svc = Get-Service -Name 'Alamut' -ErrorAction SilentlyContinue
   $wasRunning = $svc -and ($svc.Status -eq 'Running')
 
@@ -322,7 +319,7 @@ function Invoke-Cli {
   $cliExe = Get-AlamutCliExe
   if (-not $cliExe) {
     Write-Host "Error: alamut-cli.exe not found. Build it first:"
-    Write-Host "  cd alamut-api"
+    Write-Host "  cd netvan-api"
     Write-Host "  cargo build --release -p alamut-cli"
     exit 1
   }
@@ -349,7 +346,7 @@ function Invoke-Api {
   $apiExe = Get-AlamutApiExe
   if (-not $apiExe) {
     Write-Host "Error: alamut-api.exe not found. Build it first:"
-    Write-Host "  cd alamut-api"
+    Write-Host "  cd netvan-api"
     Write-Host "  cargo build --release"
     exit 1
   }
@@ -413,7 +410,7 @@ switch ($Command) {
   'webui'    { Invoke-WebUI -Extra $Args }
   'doctor'   { exit (Invoke-Doctor) }
   'remove'   { Invoke-Remove -Extra $Args }
-  'update'   { Invoke-Update }
+  { $_ -in 'update', 'rebuild' } { Invoke-Update }
   'run'      { Invoke-Api (@('run') + $Args) }
   'install'  { Invoke-Api @('install') }
   'uninstall' { Invoke-Api @('uninstall') }

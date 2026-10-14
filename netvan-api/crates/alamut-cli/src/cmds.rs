@@ -721,6 +721,43 @@ pub async fn cmd_machine(api: &ApiClient, as_json: bool) -> Result<()> {
     Ok(())
 }
 
+// ------------------------------------------------------------------ rebuild
+
+/// ponytail: shells out to the existing reinstall script (build → uninstall → install → start),
+/// then relaunches alamut-cli. Paths are baked at compile time from the workspace layout;
+/// a relocated binary needs them passed in instead.
+pub async fn cmd_rebuild() -> Result<()> {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
+    let script = root.join("scripts").join("reinstall-windows-service.ps1");
+
+    println!("{} {}", cyan("◈"), dim("closing running alamut-api / alamut-cli instances"));
+    let me = std::process::id().to_string();
+    // taskkill exits non-zero when nothing matched; that is fine.
+    let _ = std::process::Command::new("taskkill")
+        .args(["/F", "/IM", "alamut-cli.exe", "/FI", &format!("PID ne {me}")])
+        .status();
+    let _ = std::process::Command::new("taskkill").args(["/F", "/IM", "alamut-api.exe"]).status();
+
+    println!("{} {}", cyan("◈"), dim(&format!("rebuild via {}", script.display())));
+    let status = std::process::Command::new("powershell")
+        .args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"])
+        .arg(&script)
+        .status()?;
+    anyhow::ensure!(status.success(), "rebuild failed ({status}) — run from an elevated shell");
+
+    println!("{} {}", cyan("◈"), dim("rebuilding and relaunching alamut-cli"));
+    let built = std::process::Command::new("cargo")
+        .args(["build", "-p", "alamut-cli", "--release"])
+        .current_dir(&root)
+        .status()?;
+    anyhow::ensure!(built.success(), "alamut-cli build failed ({built})");
+    let exe = root.join("target").join("release").join("alamut-cli.exe");
+    std::process::Command::new("cmd")
+        .args(["/C", "start", "", &exe.to_string_lossy()])
+        .spawn()?;
+    Ok(())
+}
+
 // ---------------------------------------------------------------- live loops
 
 async fn live_loop(title: &str, glyph: &str, interval_ms: u64, mut draw: impl FnMut() -> Result<()>) -> Result<()> {
