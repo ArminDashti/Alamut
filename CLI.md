@@ -99,6 +99,18 @@ alamut <command>
 
 ## Commands
 
+### Lifecycle (API service + WebUI)
+- `alamut run` - Start the API service and the WebUI (`127.0.0.1:<port>`)
+- `alamut stop` - Stop the WebUI and the API service
+- `alamut status` - Service + WebUI state (exit 0 running, 3 stopped, 4 not installed)
+- `alamut port [--port=N]` - Show or set the WebUI port (saved to `%LOCALAPPDATA%\Alamut\config.json`)
+- `alamut webui run|stop` - Start or stop the WebUI preview (builds it if `dist` is missing)
+- `alamut webui [--url <url>]` - Open the Web UI in the default browser
+- `alamut reinstall [--remove-data=yes|no] [-y]` - Rebuild the service (elevated; `yes` deletes API data)
+- `alamut remove [--purge] [-y]` - Stop + uninstall; scans for leftovers and exits 1 if any remain
+- `alamut doctor [--fix]` - Diagnostics; `--fix` clears a stale `webui.pid` and repairs config
+- `alamut api run` - Run the API in the foreground (the old `run` behavior)
+
 ### Service Management
 - `alamut service start` - Start the Alamut Windows service
 - `alamut service stop` - Stop the Alamut Windows service
