@@ -71,7 +71,8 @@ if (Get-Service -Name Alamut -ErrorAction SilentlyContinue) {
 }
 
 Write-Host "==> cargo build -p alamut-api --release --target $target"
-cargo build -p alamut-api --release --target $target
+# cargo writes progress to stderr; merge it so Windows PowerShell + "Stop" does not abort on it.
+cargo build -p alamut-api --release --target $target 2>&1 | ForEach-Object { "$_" }
 if ($LASTEXITCODE -ne 0) {
   throw "cargo build failed with exit code $LASTEXITCODE"
 }
@@ -95,6 +96,13 @@ if ($uninstallCode -ne 0) {
 $InstalledExe = Join-Path $InstallDir 'alamut-api.exe'
 New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
 if ($Exe -ne $InstalledExe) { Copy-Item -LiteralPath $Exe -Destination $InstalledExe -Force }
+# Bundle Ookla speedtest CLI next to the exe (speedtest\speedtest.exe is resolved from there).
+$SpeedtestSrc = Join-Path $RepoRoot 'speedtest'
+if (Test-Path -LiteralPath (Join-Path $SpeedtestSrc 'speedtest.exe')) {
+  $SpeedtestTarget = Join-Path $InstallDir 'speedtest'
+  New-Item -ItemType Directory -Force -Path $SpeedtestTarget | Out-Null
+  Copy-Item -Path (Join-Path $SpeedtestSrc '*') -Destination $SpeedtestTarget -Recurse -Force
+}
 $WebDist = Join-Path $RepoRoot '..\netvan-webui\dist'
 if (Test-Path -LiteralPath $WebDist) {
   $WebTarget = Join-Path $InstallDir 'webui'
