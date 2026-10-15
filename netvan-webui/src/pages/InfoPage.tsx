@@ -4,10 +4,8 @@ import { CircuitBoard, Cpu, Gpu, HardDrive, MemoryStick, type LucideIcon } from 
 import { Card } from "@/components/ui/card";
 import {
   rpc,
-  type DiskInfo,
   type GpuInfo,
   type HardwareInventory,
-  type MemoryInfo,
   type ThermalSnapshot,
 } from "@/lib/api";
 import { formatBytes } from "@/lib/systemMetrics";
@@ -59,11 +57,6 @@ function formatMemMhz(value: number | null | undefined): string {
   return `${value} MHz`;
 }
 
-function formatMt(value: number | null | undefined): string {
-  if (value == null || !Number.isFinite(value) || value <= 0) return "—";
-  return String(value);
-}
-
 function brandModel(brand: string, model: string): string {
   const b = brand.trim();
   const m = model.trim();
@@ -83,99 +76,11 @@ function countText(value: number | null | undefined): string {
   return value != null && value > 0 ? String(value) : "—";
 }
 
-function memorySubtitle(mem: MemoryInfo | undefined): string {
-  if (!mem) return "—";
-  const name = brandModel(mem.brand, mem.model);
-  const typ = mem.memory_type?.trim();
-  if (typ && name !== "—" && !name.toLowerCase().includes(typ.toLowerCase())) {
-    return `${name} ${typ}`;
-  }
-  return name;
-}
-
-function primaryDisk(disks: DiskInfo[]): DiskInfo | undefined {
-  const ssds = disks.filter((d) => d.kind === "ssd");
-  const pool = ssds.length > 0 ? ssds : disks;
-  return [...pool].sort((a, b) => b.capacity_bytes - a.capacity_bytes)[0];
-}
-
 function gpuMemoryKind(gpu: GpuInfo): "Shared" | "Dedicated" {
   const s = `${gpu.brand} ${gpu.model}`.toLowerCase();
   if (/\barc\b|rtx|gtx|radeon rx|geforce|quadro/.test(s)) return "Dedicated";
   if (/uhd|iris|intel|radeon\(tm\) graphics/.test(s)) return "Shared";
   return "Dedicated";
-}
-
-function HeroMetric({ text }: { text: string }) {
-  const match = /^([\d.]+)\s*(.*)$/.exec(text.trim());
-  if (!match) {
-    return <p className="text-right text-2xl font-semibold tabular-nums">{text}</p>;
-  }
-  return (
-    <div className="shrink-0 text-right">
-      <p className="text-3xl font-semibold leading-none tabular-nums tracking-tight">{match[1]}</p>
-      {match[2] ? (
-        <p className="mt-1 text-xs text-[var(--color-muted-foreground)]">{match[2]}</p>
-      ) : null}
-    </div>
-  );
-}
-
-function SummaryCard({
-  icon: Icon,
-  accent,
-  title,
-  subtitle,
-  metric,
-  stats,
-  bar,
-}: {
-  icon: LucideIcon;
-  accent: Accent;
-  title: string;
-  subtitle: string;
-  metric: string;
-  stats: { value: string; label: string }[];
-  bar: "full" | "short" | "none";
-}) {
-  return (
-    <Card className="overflow-hidden">
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-start gap-3">
-            <div
-              className={cn(
-                "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
-                accent.icon,
-              )}
-            >
-              <Icon className="h-5 w-5" aria-hidden />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm text-[var(--color-muted-foreground)]">{title}</p>
-              <p className="line-clamp-2 text-sm font-medium">{subtitle}</p>
-            </div>
-          </div>
-          <HeroMetric text={metric} />
-        </div>
-        <div
-          className="mt-4 grid gap-2"
-          style={{ gridTemplateColumns: `repeat(${Math.max(stats.length, 1)}, minmax(0, 1fr))` }}
-        >
-          {stats.map((stat, index) => (
-            <div key={stat.label}>
-              <p className="text-sm font-semibold tabular-nums">{stat.value}</p>
-              <p className="text-xs text-[var(--color-muted-foreground)]">{stat.label}</p>
-              {bar === "short" && index === 0 ? (
-                <div className={cn("mt-2 h-0.5 w-8 rounded-full", accent.bar)} />
-              ) : null}
-            </div>
-          ))}
-        </div>
-      </div>
-      {bar === "full" ? <div className={cn("h-1", accent.bar)} /> : null}
-    </Card>
-  );
 }
 
 function DetailCard({
@@ -278,69 +183,10 @@ export function InfoPage() {
   const mb = inv?.motherboard;
   const disks = inv?.disks ?? [];
   const gpus = inv?.gpus ?? [];
-  const disk = primaryDisk(disks);
-  const gpu = gpus[0];
-  const memSpeed = mem?.configured_speed_mhz ?? mem?.speed_mhz;
 
   return (
     <div className="space-y-4">
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard
-          icon={Cpu}
-          accent={ACCENT.cpu}
-          title="CPU"
-          subtitle={brandModel(cpu?.brand ?? "", cpu?.model ?? "")}
-          metric={formatMhz(cpu?.base_speed_mhz)}
-          bar="short"
-          stats={[
-            { value: countText(cpu?.physical_cores), label: "Cores" },
-            { value: countText(cpu?.logical_processors), label: "Threads" },
-          ]}
-        />
-        <SummaryCard
-          icon={MemoryStick}
-          accent={ACCENT.memory}
-          title="Memory"
-          subtitle={memorySubtitle(mem)}
-          metric={mem ? formatBytes(mem.size_bytes) : "—"}
-          bar="full"
-          stats={[
-            { value: countText(mem?.modules), label: "Modules" },
-            { value: formatMt(memSpeed), label: "MT/s" },
-          ]}
-        />
-        <SummaryCard
-          icon={HardDrive}
-          accent={ACCENT.storage}
-          title="Storage"
-          subtitle={disk ? brandModel(disk.brand, disk.model) : "—"}
-          metric={disk ? formatBytes(disk.capacity_bytes) : "—"}
-          bar="full"
-          stats={[
-            { value: disk ? disk.kind.toUpperCase() : "—", label: "Type" },
-            { value: orDash(disk?.interface_type), label: "Interface" },
-            { value: disk?.partitions != null ? String(disk.partitions) : "—", label: "Partitions" },
-          ]}
-        />
-        <SummaryCard
-          icon={Gpu}
-          accent={ACCENT.gpu}
-          title="GPU"
-          subtitle={gpu ? brandModel(gpu.brand, gpu.model) : "No GPU detected"}
-          metric={gpu?.memory_bytes != null ? formatBytes(gpu.memory_bytes) : "—"}
-          bar="none"
-          stats={[
-            { value: gpu ? gpuMemoryKind(gpu) : "—", label: "Memory" },
-            { value: gpu?.cuda_cores != null ? gpu.cuda_cores.toLocaleString() : "—", label: "CUDA" },
-            {
-              value: gpu?.tensor_cores != null ? gpu.tensor_cores.toLocaleString() : "—",
-              label: "Tensor",
-            },
-          ]}
-        />
-      </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <DetailCard
