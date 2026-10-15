@@ -1,14 +1,19 @@
 ---
 name: dpdc-db-policies
 description: >-
-  Policy for working with the DPDC / Pakhsh workplace SQL Server database (Pakhsh_Data_New): connect via environment variables only, read-only and narrowly scoped queries on a shared database, schema map, Finglish naming, and a verify-by-sample workflow for optimizing queries and stored procedures. Use whenever querying, debugging, editing stored procedures, or optimizing scripts on the DPDC / Pakhsh database.
+  Policy for working with the DPDC / Pakhsh workplace SQL Server database
+  (Pakhsh_Data_New): connect via environment variables only, read-only and
+  narrowly scoped queries on a shared database, schema map, Finglish naming,
+  and a verify-by-sample workflow for optimizing queries and stored procedures.
+  Use whenever querying, debugging, editing stored procedures, or optimizing
+  scripts on the DPDC / Pakhsh database.
 disable-model-invocation: false
 metadata:
-  version: 1.0.0
+  version: 1.1.0
   author: "Armin Dashti"
-  tags: []
-  last_updated: "2026-10-10 23:26:44"
-  uuid: 428ded14-5857-463b-bfbf-6bbe7297e947
+  tags: [dpdc, pakhsh, database, sql-server, policy]
+  last_updated: "2026-10-09 17:25:53"
+  uuid: 1406ea2e-b6e0-4b13-a6b3-e7b0454d38d9
 ---
 # DPDC DB Policy
 

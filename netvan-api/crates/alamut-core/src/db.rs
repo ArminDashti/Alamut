@@ -939,6 +939,19 @@ impl Database {
             .collect())
     }
 
+    /// Executable path last seen for a process name (from captured flows).
+    pub fn app_process_path(&self, process_name: &str) -> Result<Option<String>> {
+        let conn = self.conn.lock();
+        // ponytail: no index on traffic_flows(process_name); full scan per lookup.
+        // Upgrade: CREATE INDEX on (process_name) once flow volume grows.
+        let path = conn.query_row(
+            "SELECT MAX(process_path) FROM traffic_flows WHERE process_name = ?1",
+            params![process_name],
+            |row| row.get::<_, Option<String>>(0),
+        )?;
+        Ok(path)
+    }
+
     pub fn app_usage_series(
         &self,
         range: &TimeRange,

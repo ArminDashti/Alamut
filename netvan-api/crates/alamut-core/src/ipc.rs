@@ -55,6 +55,7 @@ pub enum RpcRequest {
         #[serde(default)]
         nic_id: Option<String>,
     },
+    GetAppIcon { process_name: String },
     RunPing {
         target: String,
         nic_id: Option<String>,
@@ -121,6 +122,8 @@ pub enum RpcResponse {
     LinkEvents(Vec<LinkEvent>),
     AppUsage(Vec<AppUsageRow>),
     AppUsageSeries(Vec<AppUsageSeriesPoint>),
+    /// Base64-encoded PNG of the process executable icon, if resolvable.
+    AppIcon(Option<String>),
     PingResult(PingSample),
     HttpLatencyResult(HttpLatencySample),
     Traceroute(TracerouteResult),

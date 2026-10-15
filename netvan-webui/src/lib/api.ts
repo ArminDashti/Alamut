@@ -297,6 +297,7 @@ export type RpcRequest =
         nic_id?: string | null;
       };
     }
+  | { method: "GetAppIcon"; params: { process_name: string } }
   | { method: "RunPing"; params: { target: string; nic_id: string | null; count?: number; packet_size?: number | null } }
   | {
       method: "RunHttpLatency";
@@ -509,6 +510,7 @@ export type RpcResponse =
   | { type: "CpuHistory"; data: SystemMetricHistory }
   | { type: "MemoryHistory"; data: SystemMetricHistory }
   | { type: "DiskHistory"; data: SystemMetricHistory }
+  | { type: "AppIcon"; data: string | null }
   | { type: "Error"; data: { message: string } };
 
 export async function rpc<T = RpcResponse>(req: RpcRequest): Promise<T> {

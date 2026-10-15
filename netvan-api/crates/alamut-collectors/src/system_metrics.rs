@@ -45,14 +45,20 @@ impl SystemMetricsCollector {
         let system = self.system.lock();
         let cpus = system.cpus();
         let first = cpus.first();
+        let per_core: Vec<f64> = cpus.iter().map(|c| c.cpu_usage() as f64).collect();
         CpuSnapshot {
             brand: first.map(|c| c.brand().to_string()).unwrap_or_default(),
             vendor_id: first.map(|c| c.vendor_id().to_string()).unwrap_or_default(),
             physical_cores: system.physical_core_count().map(|n| n as u32),
             logical_cores: cpus.len() as u32,
             frequency_mhz: first.map(|c| c.frequency()).filter(|&f| f > 0),
-            utilization: system.global_cpu_usage() as f64,
-            per_core: cpus.iter().map(|c| c.cpu_usage() as f64).collect(),
+            // Overall = mean of all per-core usages.
+            utilization: if per_core.is_empty() {
+                0.0
+            } else {
+                per_core.iter().sum::<f64>() / per_core.len() as f64
+            },
+            per_core,
         }
     }
 

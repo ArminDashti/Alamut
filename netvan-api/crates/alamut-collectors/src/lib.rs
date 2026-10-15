@@ -1,3 +1,4 @@
+pub mod app_icon;
 pub mod engine;
 pub mod http_latency;
 pub mod ip_info;

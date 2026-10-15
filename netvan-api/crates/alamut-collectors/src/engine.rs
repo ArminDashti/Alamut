@@ -383,6 +383,13 @@ impl CollectorEngine {
                     settings.ignore_private_ips,
                 )?)
             }
+            RpcRequest::GetAppIcon { process_name } => {
+                let icon = match self.db.app_process_path(&process_name)? {
+                    Some(path) => crate::app_icon::exe_icon_png_base64(&path),
+                    None => None,
+                };
+                RpcResponse::AppIcon(icon)
+            }
             RpcRequest::RunPing {
                 target,
                 nic_id,

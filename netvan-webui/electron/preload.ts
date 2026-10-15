@@ -36,5 +36,4 @@ contextBridge.exposeInMainWorld("alamut", {
   openExternal: (url: string) => ipcRenderer.send("alamut:open-external", url),
 
   /** Quit the desktop app. */
-  quit: () => ipcRenderer.send("alamut:quit"),
-});
+  quit: () => ipcRenderer.send("alamut:quit"),});

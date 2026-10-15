@@ -216,8 +216,14 @@ fn local_sys_snapshot() -> LocalSys {
     let total = sys.total_memory();
     let used = sys.used_memory();
     let avail = sys.available_memory();
+    // Overall = mean of all per-core usages.
+    let cpu_util = if cpus.is_empty() {
+        0.0
+    } else {
+        cpus.iter().map(|c| c.cpu_usage() as f64).sum::<f64>() / cpus.len() as f64
+    };
     LocalSys {
-        cpu_util: sys.global_cpu_usage() as f64,
+        cpu_util,
         cpu_brand: first.map(|c| c.brand().to_string()).unwrap_or_default(),
         logical: cpus.len() as u32,
         physical: sys.physical_core_count().map(|n| n as u32),
