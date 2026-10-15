@@ -62,14 +62,72 @@ function Has-Switch {
 }
 
 function Get-Config {
-  $cfg = [pscustomobject]@{ port = $DefaultWebPort }
+  $cfg = [pscustomobject]@{ port = $DefaultWebPort; installDir = $null }
   if (Test-Path -LiteralPath $ConfigFile) {
     try {
       $raw = Get-Content -LiteralPath $ConfigFile -Raw | ConvertFrom-Json
       if ($raw.port) { $cfg.port = [int]$raw.port }
+      if ($raw.installDir) { $cfg.installDir = [string]$raw.installDir }
     } catch { }
   }
   return $cfg
+}
+
+# Install location choices for the API binaries (data stays in ProgramData).
+$InstallChoices = @{
+  '1' = Join-Path $env:LOCALAPPDATA 'Alamut'
+  '2' = Join-Path $env:APPDATA 'Alamut'
+  '3' = Join-Path $env:ProgramFiles 'Alamut'
+}
+
+# --location=local|roaming|programfiles|<path> skips the menu; non-interactive uses local.
+function Get-InstallDir {
+  param([string[]]$Extra)
+  $loc = Get-Flag $Extra 'location'
+  $named = @{ local = $InstallChoices['1']; roaming = $InstallChoices['2']; programfiles = $InstallChoices['3'] }
+  if ($loc) { if ($named.ContainsKey($loc)) { return $named[$loc] } return $loc }
+  if ([Console]::IsInputRedirected) { return $InstallChoices['1'] }
+  Write-Host "Install location:"
+  Write-Host "  1) $($InstallChoices['1'])  (default)"
+  Write-Host "  2) $($InstallChoices['2'])"
+  Write-Host "  3) $($InstallChoices['3'])"
+  Write-Host "  4) Custom path"
+  $pick = Read-Host "Choose [1-4] (Enter = 1)"
+  if ([string]::IsNullOrWhiteSpace($pick)) { $pick = '1' }
+  if ($pick -in '1', '2', '3') { return $InstallChoices[$pick] }
+  if ($pick -eq '4') {
+    $custom = Read-Host "Custom install path"
+    if (-not [string]::IsNullOrWhiteSpace($custom)) { return $custom.Trim() }
+  }
+  Write-Host "Error: invalid install location." -ForegroundColor Red
+  return $null
+}
+
+# Copies alamut-api.exe (+ webui dist) into the chosen dir and registers the service from that copy.
+# Returns the installed exe path on success, $null on failure.
+function Invoke-Install {
+  param([string[]]$Extra)
+  if (-not (Test-Admin)) { Write-Host "Error: install needs an elevated (Administrator) shell." -ForegroundColor Red; return $null }
+  $source = Get-AlamutApiExe
+  if (-not $source) { Write-Host "Error: alamut-api.exe not built. cd netvan-api; cargo build --release" -ForegroundColor Red; return $null }
+  $dir = Get-InstallDir $Extra
+  if (-not $dir) { return $null }
+  New-Item -ItemType Directory -Force -Path $dir | Out-Null
+  $installedExe = Join-Path $dir 'alamut-api.exe'
+  if ($source -ne $installedExe) { Copy-Item -LiteralPath $source -Destination $installedExe -Force }
+  $webDist = Join-Path $WebuiRoot 'dist'
+  if (Test-Path -LiteralPath $webDist) {
+    $webTarget = Join-Path $dir 'webui'
+    New-Item -ItemType Directory -Force -Path $webTarget | Out-Null
+    Copy-Item -Path (Join-Path $webDist '*') -Destination $webTarget -Recurse -Force
+  }
+  Write-Host "==> Installing service from $installedExe"
+  & $installedExe install | Out-Host
+  if ($LASTEXITCODE -ne 0) { Write-Host "install failed." -ForegroundColor Red; return $null }
+  $cfg = Get-Config
+  $cfg.installDir = $dir
+  Save-Config $cfg
+  return $installedExe
 }
 
 function Save-Config {
@@ -119,8 +177,11 @@ function Get-AlamutApiExe {
   foreach ($c in $candidates) {
     if (Test-Path -LiteralPath $c) { return (Resolve-Path -LiteralPath $c).Path }
   }
-  $installed = Join-Path $env:LOCALAPPDATA 'Alamut\Alamut.exe'
-  if (Test-Path -LiteralPath $installed) { return $installed }
+  $cfgDir = (Get-Config).installDir
+  if ($cfgDir) {
+    $installed = Join-Path $cfgDir 'alamut-api.exe'
+    if (Test-Path -LiteralPath $installed) { return $installed }
+  }
   return $null
 }
 
@@ -330,11 +391,11 @@ function Invoke-Reinstall {
     Write-Host "Deleted $DataDir"
   }
   Write-Host "==> Installing new service..."
-  & $apiExe install | Out-Host
-  if ($LASTEXITCODE -ne 0) { Write-Host "install failed." -ForegroundColor Red; return 1 }
+  $installedExe = Invoke-Install $Extra
+  if (-not $installedExe) { return 1 }
   if ($wasRunning) {
     Write-Host "==> Starting service..."
-    & $apiExe start | Out-Host
+    & $installedExe start | Out-Host
     if ($LASTEXITCODE -ne 0) { return $LASTEXITCODE }
   }
   Invoke-Status | Out-Null
@@ -452,6 +513,11 @@ function Invoke-Version {
 function Invoke-Update {
   Write-Host "* ALAMUT update - rebuilding API + CLI + WebUI..."
   $wasRunning = (Get-ServiceState) -and ((Get-ServiceState).Status -eq 'Running')
+  # Running service locks target\release\alamut-api.exe; stop it before cargo replaces the file.
+  if ($wasRunning) {
+    Write-Host "==> Stopping service before build (running exe is locked)..."
+    Stop-Service -Name $ServiceName -Force
+  }
   Push-Location $ApiRoot
   try {
     cargo build --release -p alamut-api -p alamut-cli
@@ -485,13 +551,13 @@ function Show-Help {
   Write-Host "  port --port=N     Show or set WebUI port (saved; restarts if running)"
   Write-Host "  webui run|stop    Start/stop the WebUI preview on its port"
   Write-Host "  webui [--url U]   Open the Web UI in the browser"
-  Write-Host "  reinstall [--remove-data=yes|no] [-y]   Rebuild service (elevated)"
+  Write-Host "  reinstall [--remove-data=yes|no] [--location=local|roaming|programfiles|<path>] [-y]   Rebuild service (elevated)"
   Write-Host "  update            Rebuild API+CLI+WebUI, restart service if running"
   Write-Host "  remove [--purge] [-y]   Stop + uninstall (purge also deletes data/state)"
   Write-Host ""
   Write-Host "Service:"
   Write-Host "  service start|stop|restart|status"
-  Write-Host "  install           Install the Windows service"
+  Write-Host "  install [--location=local|roaming|programfiles|<path>]   Copy binaries to a chosen dir and install the service"
   Write-Host "  uninstall         Uninstall the Windows service"
   Write-Host "  api run           Run API in foreground (dev/console mode)"
   Write-Host ""
@@ -555,7 +621,7 @@ switch ($Command) {
   'rebuild'   { Invoke-Update }
   'remove'    { Invoke-Remove -Extra $Args }
   'doctor'    { exit (Invoke-Doctor $Args) }
-  'install'   { Invoke-Api @('install') }
+  'install'   { exit ([int](-not (Invoke-Install $Args))) }
   'uninstall' { Invoke-Api @('uninstall') }
   'api'       {
     if ($Args.Count -gt 0 -and $Args[0] -eq 'run') { Invoke-Api (@('run') + $Args[1..($Args.Count - 1)]) }

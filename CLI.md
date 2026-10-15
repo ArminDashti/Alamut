@@ -106,7 +106,7 @@ alamut <command>
 - `alamut port [--port=N]` - Show or set the WebUI port (saved to `%LOCALAPPDATA%\Alamut\config.json`)
 - `alamut webui run|stop` - Start or stop the WebUI preview (builds it if `dist` is missing)
 - `alamut webui [--url <url>]` - Open the Web UI in the default browser
-- `alamut reinstall [--remove-data=yes|no] [-y]` - Rebuild the service (elevated; `yes` deletes API data)
+- `alamut reinstall [--remove-data=yes|no] [--location=...] [-y]` - Rebuild the service (elevated; `yes` deletes API data)
 - `alamut remove [--purge] [-y]` - Stop + uninstall; scans for leftovers and exits 1 if any remain
 - `alamut doctor [--fix]` - Diagnostics; `--fix` clears a stale `webui.pid` and repairs config
 - `alamut api run` - Run the API in the foreground (the old `run` behavior)
@@ -116,7 +116,7 @@ alamut <command>
 - `alamut service stop` - Stop the Alamut Windows service
 - `alamut service restart` - Restart the Alamut Windows service
 - `alamut service status` - Show service install/running status
-- `alamut install` - Install the Alamut Windows service
+- `alamut install [--location=...]` - Copy binaries to the install location and install the Alamut Windows service. Location is chosen from a menu when not given: `%LOCALAPPDATA%\Alamut` (default), `%APPDATA%\Alamut`, `%ProgramFiles%\Alamut`, or a custom path. Data stays in `%ProgramData%\Alamut\AlamutApi`.
 
 ### App
 - `alamut doctor` - Run diagnostics (binaries, service, API health, data dir, WebUI, hosts entry)

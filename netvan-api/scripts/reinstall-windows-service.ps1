@@ -7,7 +7,11 @@
   Run this after any code change that affects the installed Alamut Windows service.
   The single "Alamut" service covers both the Web UI and API (http://alamut.local).
   Must be elevated (Administrator).
+  -InstallDir sets where alamut-api.exe + webui are copied (default %LOCALAPPDATA%\Alamut).
 #>
+param(
+  [string]$InstallDir = (Join-Path $env:LOCALAPPDATA 'Alamut')
+)
 $ErrorActionPreference = "Stop"
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
@@ -87,19 +91,30 @@ if ($uninstallCode -ne 0) {
   Write-Host "uninstall exited $uninstallCode (continuing if service was absent)"
 }
 
-Write-Host "==> install new service from $Exe"
-& $Exe install
+# Copy binary (+ webui dist) to the install dir, then register the service from that copy.
+$InstalledExe = Join-Path $InstallDir 'alamut-api.exe'
+New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+if ($Exe -ne $InstalledExe) { Copy-Item -LiteralPath $Exe -Destination $InstalledExe -Force }
+$WebDist = Join-Path $RepoRoot '..\netvan-webui\dist'
+if (Test-Path -LiteralPath $WebDist) {
+  $WebTarget = Join-Path $InstallDir 'webui'
+  New-Item -ItemType Directory -Force -Path $WebTarget | Out-Null
+  Copy-Item -Path (Join-Path $WebDist '*') -Destination $WebTarget -Recurse -Force
+}
+
+Write-Host "==> install new service from $InstalledExe"
+& $InstalledExe install
 if ($LASTEXITCODE -ne 0) {
   throw "install failed with exit code $LASTEXITCODE"
 }
 
 Write-Host "==> start"
-& $Exe start
+& $InstalledExe start
 if ($LASTEXITCODE -ne 0) {
   throw "start failed with exit code $LASTEXITCODE"
 }
 
 Write-Host "==> status"
-& $Exe status
+& $InstalledExe status
 
 Write-Host "Done: old service removed, new release installed and started."
