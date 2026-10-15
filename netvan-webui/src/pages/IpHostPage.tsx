@@ -1,10 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Activity, ArrowUpDown, Clock, Globe } from "lucide-react";
 import { HistoryFilter, customToTs } from "@/components/HistoryFilter";
-import { UsagePeriodGrid } from "@/components/UsagePeriodGrid";
+import { SummaryCard } from "@/components/SummaryCard";
+import { UsageHeatmap } from "@/components/UsageHeatmap";
 import { Button } from "@/components/ui/button";
 import { rpc, type AppSettings, type HistoryRange, type NicInfo } from "@/lib/api";
 import { aggregateGridSum, buildPeriodColumns } from "@/lib/latencyPeriod";
-import { pickHighestTrafficNic } from "@/lib/pickHighestTrafficNic";
+import { countryToIso2, fetchIpInfoBatch, type IpInfo } from "@/lib/ipInfo";
+import {
+  formatPeakHourLabel,
+  pctChange,
+  peakHourFromSeries,
+  sumSeriesBytes,
+} from "@/lib/usageStats";
+import { cn, formatUsageGb } from "@/lib/utils";
 
 type SeriesPoint = {
   hour_ts: number;
@@ -17,40 +26,68 @@ type SeriesPoint = {
 
 type CtxMenu = { x: number; y: number; label: string; kind: "ip" | "host" };
 
+type GroupBy = "ip" | "host";
+
+const ROW_LIMIT = 200;
+
+function rowLabelOf(p: SeriesPoint, groupBy: GroupBy): string {
+  return groupBy === "ip"
+    ? p.remote_ip || p.process_name || "(unknown)"
+    : p.host || p.process_name || "(unknown)";
+}
+
+function totalsByLabel(points: SeriesPoint[], groupBy: GroupBy): Map<string, number> {
+  const totals = new Map<string, number>();
+  for (const p of points) {
+    const key = rowLabelOf(p, groupBy);
+    totals.set(key, (totals.get(key) ?? 0) + p.bytes_in + p.bytes_out);
+  }
+  return totals;
+}
+
 export function IpHostPage() {
   const [range, setRange] = useState<HistoryRange>("today");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
-  const [groupBy, setGroupBy] = useState<"ip" | "host">("ip");
+  const [groupBy, setGroupBy] = useState<GroupBy>("ip");
   const [nics, setNics] = useState<NicInfo[]>([]);
   const [nicId, setNicId] = useState("");
   const [series, setSeries] = useState<SeriesPoint[]>([]);
+  const [yesterdaySeries, setYesterdaySeries] = useState<SeriesPoint[]>([]);
   const [ctxMenu, setCtxMenu] = useState<CtxMenu | null>(null);
+  const [geo, setGeo] = useState<Map<string, IpInfo | null>>(new Map());
   const [msg, setMsg] = useState<string | null>(null);
   const ctxRef = useRef<HTMLDivElement>(null);
 
   const load = async () => {
     const start_ts = range === "custom" ? customToTs(customStart) : null;
     const end_ts = range === "custom" ? customToTs(customEnd) : null;
-    const usage = await rpc<{ type: "AppUsageSeries"; data: SeriesPoint[] }>({
-      method: "GetAppUsageSeries",
-      params: {
-        range,
-        start_ts,
-        end_ts,
-        group_by: groupBy,
-        nic_id: nicId || null,
-      },
-    });
+    const nic_id = nicId || null;
+    const [usage, yesterday] = await Promise.all([
+      rpc<{ type: "AppUsageSeries"; data: SeriesPoint[] }>({
+        method: "GetAppUsageSeries",
+        params: { range, start_ts, end_ts, group_by: groupBy, nic_id },
+      }),
+      range === "today"
+        ? rpc<{ type: "AppUsageSeries"; data: SeriesPoint[] }>({
+            method: "GetAppUsageSeries",
+            params: {
+              range: "yesterday",
+              start_ts: null,
+              end_ts: null,
+              group_by: groupBy,
+              nic_id,
+            },
+          })
+        : null,
+    ]);
     setSeries(usage.data);
+    setYesterdaySeries(yesterday?.data ?? []);
   };
 
   useEffect(() => {
     rpc<{ type: "Nics"; data: NicInfo[] }>({ method: "ListNics" }).then((r) => {
-      const list = r.data.filter((n) => n.media_type !== "Loopback");
-      setNics(list);
-      const best = pickHighestTrafficNic(list);
-      if (best) setNicId(best);
+      setNics(r.data.filter((n) => n.media_type !== "Loopback"));
     });
   }, []);
 
@@ -104,23 +141,57 @@ export function IpHostPage() {
     [range, customStart, customEnd],
   );
 
-  const rowLabel = (p: SeriesPoint) =>
-    groupBy === "ip"
-      ? p.remote_ip || p.process_name || "(unknown)"
-      : p.host || p.process_name || "(unknown)";
+  const totals = useMemo(() => totalsByLabel(series, groupBy), [series, groupBy]);
 
-  const rows = useMemo(() => {
-    const totals = new Map<string, number>();
-    for (const p of series) {
-      const key = rowLabel(p);
-      if (!key || key === "") continue;
-      totals.set(key, (totals.get(key) ?? 0) + p.bytes_in + p.bytes_out);
-    }
-    return [...totals.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 200)
-      .map(([k]) => k);
-  }, [series, groupBy]);
+  const rows = useMemo(
+    () =>
+      [...totals.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, ROW_LIMIT)
+        .map(([k]) => k),
+    [totals],
+  );
+
+  const stats = useMemo(() => {
+    const yTotals = totalsByLabel(yesterdaySeries, groupBy);
+    const totalTraffic = sumSeriesBytes(series);
+    const showTrend = range === "today" && yesterdaySeries.length > 0;
+    const top = [...totals.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
+    return {
+      count: totals.size,
+      totalTraffic,
+      peak: peakHourFromSeries(series),
+      top,
+      trends: showTrend
+        ? {
+            count: pctChange(totals.size, yTotals.size),
+            totalTraffic: pctChange(totalTraffic, sumSeriesBytes(yesterdaySeries)),
+          }
+        : null,
+    };
+  }, [series, yesterdaySeries, totals, groupBy, range]);
+
+  useEffect(() => {
+    if (groupBy !== "ip" || rows.length === 0) return;
+    let alive = true;
+    fetchIpInfoBatch(rows).then((m) => alive && setGeo(m)).catch(console.error);
+    return () => {
+      alive = false;
+    };
+  }, [rows, groupBy]);
+
+  const countryFlag = (ip: string) => {
+    const info = geo.get(ip.trim());
+    const cc = countryToIso2(info?.country);
+    if (!cc) return null;
+    return (
+      <span
+        className={cn("fi", `fi-${cc}`, "shrink-0 text-[11px]")}
+        title={info?.country ?? undefined}
+        aria-hidden
+      />
+    );
+  };
 
   const cells = useMemo(
     () =>
@@ -130,7 +201,7 @@ export function IpHostPage() {
         series.map((p) => ({
           ts: p.hour_ts,
           value: p.bytes_in + p.bytes_out,
-          rowKey: rowLabel(p),
+          rowKey: rowLabelOf(p, groupBy),
         })),
       ),
     [rows, columns, series, groupBy],
@@ -143,6 +214,39 @@ export function IpHostPage() {
           {msg}
         </div>
       )}
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <SummaryCard
+          label={groupBy === "ip" ? "Total IPs" : "Total Hosts"}
+          value={String(stats.count)}
+          icon={Globe}
+          iconClass="bg-blue-500/15 text-blue-400"
+          trend={stats.trends?.count != null ? { pct: stats.trends.count } : null}
+        />
+        <SummaryCard
+          label="Total Traffic"
+          value={formatUsageGb(stats.totalTraffic)}
+          icon={ArrowUpDown}
+          iconClass="bg-violet-500/15 text-violet-400"
+          trend={
+            stats.trends?.totalTraffic != null ? { pct: stats.trends.totalTraffic } : null
+          }
+        />
+        <SummaryCard
+          label="Peak Hour"
+          value={stats.peak ? formatPeakHourLabel(stats.peak.hour) : "—"}
+          sub={stats.peak ? formatUsageGb(stats.peak.bytes) : undefined}
+          icon={Clock}
+          iconClass="bg-amber-500/15 text-amber-400"
+        />
+        <SummaryCard
+          label="Top Talker"
+          value={stats.top ? stats.top[0] : "—"}
+          sub={stats.top ? formatUsageGb(stats.top[1]) : undefined}
+          icon={Activity}
+          iconClass="bg-emerald-500/15 text-emerald-400"
+        />
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <select
@@ -165,7 +269,7 @@ export function IpHostPage() {
           onCustomStart={setCustomStart}
           onCustomEnd={setCustomEnd}
         />
-        <div className="flex gap-1">
+        <div className="ml-auto flex gap-1">
           <Button
             size="sm"
             variant={groupBy === "ip" ? "default" : "outline"}
@@ -183,11 +287,13 @@ export function IpHostPage() {
         </div>
       </div>
 
-      <UsagePeriodGrid
+      <UsageHeatmap
+        title={groupBy === "ip" ? "IP traffic heatmap" : "Host traffic heatmap"}
+        rowHeader={groupBy === "ip" ? "Address" : "Host"}
+        rowLead={groupBy === "ip" ? countryFlag : undefined}
         rows={rows}
         columns={columns}
         cells={cells}
-        rowHeader={groupBy === "ip" ? "Address" : "Host"}
         onRowContextMenu={(row, e) =>
           setCtxMenu({
             x: e.clientX,

@@ -1,16 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Activity,
-  AppWindow,
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
-  Clock,
-  Shield,
-} from "lucide-react";
-import { AppUsageHeatmap } from "@/components/AppUsageHeatmap";
+import { Activity, AppWindow, ArrowUpDown, Clock, Shield } from "lucide-react";
+import { AppProcessIcon } from "@/components/AppProcessIcon";
 import { HistoryFilter, customToTs } from "@/components/HistoryFilter";
-import { Card, CardContent } from "@/components/ui/card";
+import { SummaryCard } from "@/components/SummaryCard";
+import { UsageHeatmap } from "@/components/UsageHeatmap";
 import {
   rpc,
   type AppSettings,
@@ -22,7 +15,13 @@ import {
   buildFullDayHourColumns,
   buildPeriodColumns,
 } from "@/lib/latencyPeriod";
-import { cn, formatUsageGb } from "@/lib/utils";
+import { formatUsageGb } from "@/lib/utils";
+import {
+  formatPeakHourLabel,
+  pctChange,
+  peakHourFromSeries,
+  sumSeriesBytes,
+} from "@/lib/usageStats";
 
 type SeriesPoint = {
   hour_ts: number;
@@ -34,25 +33,6 @@ type SeriesPoint = {
 };
 
 type CtxMenu = { x: number; y: number; processName: string };
-
-function pctChange(current: number, previous: number): number | null {
-  if (!Number.isFinite(current) || !Number.isFinite(previous)) return null;
-  if (previous <= 0) return current > 0 ? 100 : null;
-  return ((current - previous) / previous) * 100;
-}
-
-function formatPeakHourLabel(hour: number): string {
-  if (hour === 0) return "12 AM";
-  if (hour < 12) return `${hour} AM`;
-  if (hour === 12) return "12 PM";
-  return `${hour - 12} PM`;
-}
-
-function sumSeriesBytes(points: SeriesPoint[]): number {
-  let n = 0;
-  for (const p of points) n += p.bytes_in + p.bytes_out;
-  return n;
-}
 
 function uniqueApps(points: SeriesPoint[]): Set<string> {
   const s = new Set<string>();
@@ -72,80 +52,6 @@ function activeAppCount(points: SeriesPoint[]): number {
   let n = 0;
   for (const v of totals.values()) if (v > 0) n += 1;
   return n;
-}
-
-function peakHourFromSeries(points: SeriesPoint[]): { hour: number; bytes: number } | null {
-  const byHour = new Map<number, number>();
-  for (const p of points) {
-    const h = new Date(p.hour_ts * 1000).getHours();
-    byHour.set(h, (byHour.get(h) ?? 0) + p.bytes_in + p.bytes_out);
-  }
-  let bestHour = -1;
-  let bestBytes = 0;
-  for (const [h, b] of byHour) {
-    if (b > bestBytes) {
-      bestBytes = b;
-      bestHour = h;
-    }
-  }
-  if (bestHour < 0 || bestBytes <= 0) return null;
-  return { hour: bestHour, bytes: bestBytes };
-}
-
-function SummaryCard({
-  label,
-  value,
-  sub,
-  trend,
-  icon: Icon,
-  iconClass,
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-  trend?: { pct: number; invert?: boolean } | null;
-  icon: typeof Activity;
-  iconClass: string;
-}) {
-  const up = trend != null && trend.pct > 0;
-  const down = trend != null && trend.pct < 0;
-  const good = trend?.invert ? down : up;
-  const bad = trend?.invert ? up : down;
-  return (
-    <Card className="border-[var(--color-border)]/80">
-      <CardContent className="flex items-start gap-3 p-4">
-        <div
-          className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
-            iconClass,
-          )}
-        >
-          <Icon className="h-5 w-5" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-xs text-[var(--color-muted-foreground)]">{label}</div>
-          <div className="text-2xl font-semibold tabular-nums leading-tight">{value}</div>
-          {sub && (
-            <div className="mt-0.5 text-xs text-[var(--color-muted-foreground)]">{sub}</div>
-          )}
-          {trend != null && trend.pct != null && Number.isFinite(trend.pct) && (
-            <div
-              className={cn(
-                "mt-1 flex items-center gap-0.5 text-xs font-medium",
-                good && "text-emerald-400",
-                bad && "text-emerald-400",
-                !good && !bad && "text-[var(--color-muted-foreground)]",
-              )}
-            >
-              {up ? <ArrowUp className="h-3 w-3" /> : down ? <ArrowDown className="h-3 w-3" /> : null}
-              <span>{Math.abs(trend.pct).toFixed(0)}%</span>
-              <span className="font-normal text-[var(--color-muted-foreground)]">vs yesterday</span>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
 }
 
 export function AppsPage() {
@@ -181,9 +87,6 @@ export function AppsPage() {
       }),
       rpc<{ type: "Settings"; data: AppSettings }>({ method: "GetSettings" }),
     ]);
-    setSeries(usage.data);
-    setUsageRows(appUsage.data);
-    setBlockedCount(settings.data.ignored_apps?.length ?? 0);
     setSeries(usage.data);
     setUsageRows(appUsage.data);
     setBlockedCount(settings.data.ignored_apps?.length ?? 0);
@@ -373,7 +276,10 @@ export function AppsPage() {
         />
       </div>
 
-      <AppUsageHeatmap
+      <UsageHeatmap
+        title="App traffic heatmap"
+        rowHeader="App"
+        rowLead={(row) => <AppProcessIcon name={row} />}
         rows={rows}
         columns={columns}
         cells={cells}

@@ -59,6 +59,13 @@ function Invoke-BestEffort {
 }
 
 $target = Resolve-ApiCargoTarget
+
+# Running service locks target\...\alamut-api.exe; stop it before cargo replaces the file.
+if (Get-Service -Name Alamut -ErrorAction SilentlyContinue) {
+  Write-Host "==> stop service before build (running exe is locked)"
+  Stop-Service -Name Alamut -Force
+}
+
 Write-Host "==> cargo build -p alamut-api --release --target $target"
 cargo build -p alamut-api --release --target $target
 if ($LASTEXITCODE -ne 0) {
