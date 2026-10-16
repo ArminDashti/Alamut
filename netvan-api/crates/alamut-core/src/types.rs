@@ -314,6 +314,17 @@ pub struct MotherboardInfo {
     pub ram_slots: Option<u32>,
 }
 
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct OsInfo {
+    /// e.g. Windows
+    pub name: String,
+    /// e.g. 11 (Pro)
+    pub version: String,
+    pub kernel_version: String,
+    /// e.g. x86_64
+    pub architecture: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HardwareInventory {
     pub cpu: CpuInfo,
@@ -321,6 +332,8 @@ pub struct HardwareInventory {
     pub disks: Vec<DiskInfo>,
     pub gpus: Vec<GpuInfo>,
     pub motherboard: MotherboardInfo,
+    #[serde(default)]
+    pub os: OsInfo,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

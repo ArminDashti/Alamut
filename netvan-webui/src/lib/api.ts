@@ -187,12 +187,20 @@ export interface MotherboardInfo {
   ram_slots: number | null;
 }
 
+export interface OsInfo {
+  name: string;
+  version: string;
+  kernel_version: string;
+  architecture: string;
+}
+
 export interface HardwareInventory {
   cpu: CpuInfo;
   memory: MemoryInfo;
   disks: DiskInfo[];
   gpus: GpuInfo[];
   motherboard: MotherboardInfo;
+  os: OsInfo;
 }
 
 export type HardwareKind =

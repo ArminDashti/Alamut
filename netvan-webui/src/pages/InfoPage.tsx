@@ -1,7 +1,9 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { CircuitBoard, Cpu, Gpu, HardDrive, MemoryStick, type LucideIcon } from "lucide-react";
+import { CircuitBoard, Cpu, Gpu, HardDrive, Monitor, MemoryStick, type LucideIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { HwVendorLogo } from "@/components/HwVendorLogo";
+import { matchHwVendor } from "@/lib/hwVendor";
 import {
   rpc,
   type GpuInfo,
@@ -44,6 +46,11 @@ const ACCENT = {
     bar: "bg-amber-500",
     button: "bg-amber-600 hover:bg-amber-500",
   },
+  os: {
+    icon: "bg-rose-500/15 text-rose-400",
+    bar: "bg-rose-500",
+    button: "bg-rose-600 hover:bg-rose-500",
+  },
 } satisfies Record<string, Accent>;
 
 function formatMhz(value: number | null | undefined): string {
@@ -83,18 +90,24 @@ function gpuMemoryKind(gpu: GpuInfo): "Shared" | "Dedicated" {
   return "Dedicated";
 }
 
+function VendorLogo({ brand, model }: { brand: string; model: string }) {
+  return <HwVendorLogo vendor={matchHwVendor(brand, model)} className="ml-auto h-10 w-auto max-w-[6rem] object-contain" />;
+}
+
 function DetailCard({
   icon: Icon,
   accent,
   title,
   rows,
   action,
+  logo,
 }: {
   icon: LucideIcon;
   accent: Accent;
   title: string;
   rows: { label: string; value: ReactNode }[];
   action?: { to: string; label: string };
+  logo?: ReactNode;
 }) {
   return (
     <Card className="flex h-full flex-col">
@@ -103,6 +116,7 @@ function DetailCard({
           <Icon className="h-4 w-4" aria-hidden />
         </div>
         <h2 className="text-sm font-semibold">{title}</h2>
+        {logo}
       </div>
       <div className="flex-1 px-4 py-2">
         {rows.map((row) => (
@@ -178,6 +192,7 @@ export function InfoPage() {
     };
   }, []);
 
+  const os = inv?.os;
   const cpu = inv?.cpu;
   const mem = inv?.memory;
   const mb = inv?.motherboard;
@@ -190,9 +205,26 @@ export function InfoPage() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <DetailCard
+          icon={Monitor}
+          accent={ACCENT.os}
+          title="Operating System"
+          logo={
+            os && /windows/i.test(os.name) ? (
+              <HwVendorLogo vendor="microsoft" className="ml-auto h-10 w-auto max-w-[6rem] object-contain" />
+            ) : null
+          }
+          rows={[
+            { label: "Name", value: orDash(os?.name) },
+            { label: "Version", value: orDash(os?.version) },
+            { label: "Kernel", value: orDash(os?.kernel_version) },
+            { label: "Architecture", value: orDash(os?.architecture) },
+          ]}
+        />
+        <DetailCard
           icon={Cpu}
           accent={ACCENT.cpu}
           title="Processor"
+          logo={<VendorLogo brand={cpu?.brand ?? ""} model={cpu?.model ?? ""} />}
           rows={[
             { label: "Model", value: brandModel(cpu?.brand ?? "", cpu?.model ?? "") },
             { label: "Base Speed", value: formatMhz(cpu?.base_speed_mhz) },
@@ -215,6 +247,7 @@ export function InfoPage() {
           icon={MemoryStick}
           accent={ACCENT.memory}
           title="Memory"
+          logo={<VendorLogo brand={mem?.brand ?? ""} model={mem?.model ?? ""} />}
           action={{ to: "/system/memory", label: "View Memory Details" }}
           rows={[
             { label: "Total Size", value: mem ? formatBytes(mem.size_bytes) : "—" },
@@ -246,6 +279,7 @@ export function InfoPage() {
               icon={HardDrive}
               accent={ACCENT.storage}
               title={disks.length > 1 ? `Storage ${i + 1}` : "Storage"}
+              logo={<VendorLogo brand={d.brand} model={d.model} />}
               action={{
                 to: d.kind === "hdd" ? "/system/hdd" : "/system/ssd",
                 label: "View Storage Details",
@@ -279,6 +313,7 @@ export function InfoPage() {
                 icon={Gpu}
                 accent={ACCENT.gpu}
                 title={gpus.length > 1 ? `Graphics ${i + 1}` : "Graphics"}
+                logo={<VendorLogo brand={g.brand} model={g.model} />}
                 rows={[
                   { label: "Adapter", value: brandModel(g.brand, g.model) },
                   { label: "Dedicated Memory", value: kind === "Dedicated" ? memText : "—" },
@@ -301,6 +336,7 @@ export function InfoPage() {
           icon={CircuitBoard}
           accent={ACCENT.board}
           title="Motherboard"
+          logo={<VendorLogo brand={mb?.brand ?? ""} model={mb?.model ?? ""} />}
           rows={[
             { label: "Manufacturer", value: orDash(mb?.brand) },
             { label: "Model", value: orDash(mb?.model) },

@@ -1,12 +1,28 @@
 //! Static hardware inventory (CPU, RAM, disks, GPU, motherboard).
 
 use alamut_core::types::{
-    CpuInfo, DiskInfo, DiskKind, GpuInfo, HardwareInventory, MemoryInfo, MotherboardInfo,
+    CpuInfo, DiskInfo, DiskKind, GpuInfo, HardwareInventory, MemoryInfo, MotherboardInfo, OsInfo,
 };
+use sysinfo::System;
 use tracing::warn;
 
 /// Collect hardware inventory. On Windows uses WMI; elsewhere returns empty stubs.
 pub fn collect() -> HardwareInventory {
+    let mut inv = collect_hardware();
+    inv.os = collect_os();
+    inv
+}
+
+fn collect_os() -> OsInfo {
+    OsInfo {
+        name: System::name().unwrap_or_default(),
+        version: System::os_version().unwrap_or_default(),
+        kernel_version: System::kernel_version().unwrap_or_default(),
+        architecture: std::env::consts::ARCH.to_string(),
+    }
+}
+
+fn collect_hardware() -> HardwareInventory {
     #[cfg(windows)]
     {
         match win::collect_wmi() {
@@ -44,6 +60,7 @@ fn fallback_empty() -> HardwareInventory {
             model: String::new(),
             ram_slots: None,
         },
+        os: OsInfo::default(),
     }
 }
 
@@ -285,6 +302,7 @@ mod win {
             disks,
             gpus,
             motherboard,
+            os: OsInfo::default(),
         })
     }
 
