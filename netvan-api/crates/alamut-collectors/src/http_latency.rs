@@ -65,8 +65,22 @@ pub async fn measure_http(
 
     let connect_start = Instant::now();
     let connect_ms = match TcpStream::connect(addrs[0]).await {
-        Ok(_s) => Some(connect_start.elapsed().as_secs_f64() * 1000.0),
-        Err(_) => None,
+        Ok(_s) => connect_start.elapsed().as_secs_f64() * 1000.0,
+        Err(e) => {
+            return Ok(HttpLatencySample {
+                nic_id,
+                url: url.to_string(),
+                ts,
+                dns_ms: Some(dns_ms),
+                connect_ms: None,
+                tls_ms: None,
+                ttfb_ms: None,
+                total_ms: Some(total_start.elapsed().as_secs_f64() * 1000.0),
+                status_code: None,
+                success: false,
+                error: Some(format!("TCP connect failed: {e}")),
+            });
+        }
     };
 
     let req_start = Instant::now();
@@ -77,7 +91,7 @@ pub async fn measure_http(
             let _ = resp.bytes().await;
             let total_ms = total_start.elapsed().as_secs_f64() * 1000.0;
             let tls_ms = if is_https {
-                connect_ms.map(|c| (ttfb_ms - c).max(0.0) * 0.3)
+                Some((ttfb_ms - connect_ms).max(0.0) * 0.3)
             } else {
                 None
             };
@@ -86,7 +100,7 @@ pub async fn measure_http(
                 url: url.to_string(),
                 ts,
                 dns_ms: Some(dns_ms),
-                connect_ms,
+                connect_ms: Some(connect_ms),
                 tls_ms,
                 ttfb_ms: Some(ttfb_ms),
                 total_ms: Some(total_ms),
@@ -100,7 +114,7 @@ pub async fn measure_http(
             url: url.to_string(),
             ts,
             dns_ms: Some(dns_ms),
-            connect_ms,
+            connect_ms: Some(connect_ms),
             tls_ms: None,
             ttfb_ms: None,
             total_ms: Some(total_start.elapsed().as_secs_f64() * 1000.0),

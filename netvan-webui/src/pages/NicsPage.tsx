@@ -18,11 +18,13 @@ import {
 } from "lucide-react";
 import ReactECharts from "echarts-for-react";
 import { HistoryFilter, customToTs } from "@/components/HistoryFilter";
+import { NicVendorLogo } from "@/components/NicVendorLogo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { rpc, type HistoryRange, type NicInfo } from "@/lib/api";
 import { aggregateGridSum, buildPeriodColumns } from "@/lib/latencyPeriod";
+import { matchNicVendor } from "@/lib/nicVendor";
 import { cn, bytesToGb, formatSpeedMb, formatUsageGb } from "@/lib/utils";
 
 const LIVE_POINTS = 60;
@@ -448,7 +450,14 @@ export function NicsPage() {
                     )}
                     title={n.oper_status}
                   />
-                  <NicTypeIcon mediaType={n.media_type} />
+                  {matchNicVendor(n.name, n.description) ? (
+                    <NicVendorLogo
+                      vendor={matchNicVendor(n.name, n.description)!}
+                      className="h-6 w-6 shrink-0 object-contain"
+                    />
+                  ) : (
+                    <NicTypeIcon mediaType={n.media_type} />
+                  )}
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium leading-tight">
                       {nicPrimaryLabel(n)}

@@ -21,7 +21,7 @@ export function HttpLatencyPage() {
   const [nics, setNics] = useState<NicInfo[]>([]);
   const [nicId, setNicId] = useState("");
   const [httpHist, setHttpHist] = useState<
-    { ts: number; total_ms: number | null; url: string }[]
+    { ts: number; connect_ms: number | null; url: string }[]
   >([]);
   const [targets, setTargets] = useState<string[]>([]);
   const [settings, setSettings] = useState<AppSettings | null>(null);
@@ -51,7 +51,7 @@ export function HttpLatencyPage() {
     const end_ts = range === "custom" ? customToTs(customEnd) : null;
     rpc<{
       type: "HttpLatencyHistory";
-      data: { ts: number; total_ms: number | null; url: string }[];
+      data: { ts: number; connect_ms: number | null; url: string }[];
     }>({
       method: "GetHttpLatencyHistory",
       params: { nic_id: nicId || null, range, start_ts, end_ts },
@@ -76,7 +76,7 @@ export function HttpLatencyPage() {
         columns,
         httpHist.map((p) => ({
           ts: p.ts,
-          value: p.total_ms,
+          value: p.connect_ms,
           rowKey: p.url,
         })),
       ),

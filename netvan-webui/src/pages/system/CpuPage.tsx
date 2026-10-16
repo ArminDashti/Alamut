@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import ReactECharts from "echarts-for-react";
-import { ArrowDown, ArrowUp, Clock, Cpu } from "lucide-react";
+import { ArrowDown, ArrowUp, Clock } from "lucide-react";
+import { HwVendorLogo } from "@/components/HwVendorLogo";
+import { matchHwVendor } from "@/lib/hwVendor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LatencyPeriodGrid } from "@/components/LatencyPeriodGrid";
 import {
@@ -148,14 +150,8 @@ function loadHistory(range: HistoryRange) {
 }
 
 function ProcessorMark({ brand, vendor }: { brand: string; vendor: string }) {
-  const intel = /intel/i.test(`${brand} ${vendor}`);
-  if (!intel) {
-    return <Cpu className="h-8 w-8 shrink-0 text-blue-400" aria-hidden />;
-  }
   return (
-    <span className="shrink-0 text-[22px] font-semibold leading-none tracking-tight text-[#3d9cf0]">
-      intel
-    </span>
+    <HwVendorLogo vendor={matchHwVendor(brand, vendor)} className="h-10 w-14 shrink-0 object-contain" />
   );
 }
 
