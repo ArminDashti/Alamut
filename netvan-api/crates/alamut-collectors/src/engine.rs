@@ -12,6 +12,7 @@ use std::time::Duration;
 use tokio::sync::Mutex;
 use tracing::{error, info};
 
+use crate::env_vars;
 use crate::http_latency;
 use crate::nic::NicCollector;
 use crate::nslookup;
@@ -305,6 +306,15 @@ impl CollectorEngine {
                 self.nic.set_enabled(&nic_id, enabled)?;
                 RpcResponse::Ok
             },
+            RpcRequest::ListEnvVars { scope } => RpcResponse::EnvVars(env_vars::list(scope)?),
+            RpcRequest::SetEnvVar { scope, name, value } => {
+                env_vars::set(scope, &name, &value)?;
+                RpcResponse::Ok
+            }
+            RpcRequest::DeleteEnvVar { scope, name } => {
+                env_vars::delete(scope, &name)?;
+                RpcResponse::Ok
+            }
             RpcRequest::GetBandwidthHistory {
                 nic_id,
                 range,

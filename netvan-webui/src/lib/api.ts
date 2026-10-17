@@ -240,6 +240,13 @@ export interface ServiceStatus {
   message: string;
 }
 
+export type EnvVarScope = "user" | "system";
+
+export interface EnvVar {
+  name: string;
+  value: string;
+}
+
 export type RpcRequest =
   | { method: "Ping" }
   | { method: "GetStatus" }
@@ -363,7 +370,10 @@ export type RpcRequest =
         start_ts: number | null;
         end_ts: number | null;
       };
-    };
+    }
+  | { method: "ListEnvVars"; params: { scope: EnvVarScope } }
+  | { method: "SetEnvVar"; params: { scope: EnvVarScope; name: string; value: string } }
+  | { method: "DeleteEnvVar"; params: { scope: EnvVarScope; name: string } };
 
 export type RpcResponse =
   | { type: "Ok" }
@@ -518,6 +528,7 @@ export type RpcResponse =
   | { type: "CpuHistory"; data: SystemMetricHistory }
   | { type: "MemoryHistory"; data: SystemMetricHistory }
   | { type: "DiskHistory"; data: SystemMetricHistory }
+  | { type: "EnvVars"; data: EnvVar[] }
   | { type: "AppIcon"; data: string | null }
   | { type: "Error"; data: { message: string } };
 

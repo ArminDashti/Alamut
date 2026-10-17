@@ -11,6 +11,7 @@ import {
   Network,
   Settings,
   Timer,
+  Variable,
   Wrench,
   Zap,
 } from "lucide-react";
@@ -30,6 +31,7 @@ const NAV_AFTER_LATENCY = [
   { to: "/speedtest", label: "Speed Test", icon: Zap },
   { to: "/apps", label: "Apps", icon: AppWindow },
   { to: "/hosts", label: "IP / Host", icon: Globe },
+  { to: "/env", label: "Environment", icon: Variable },
 ];
 
 const TOOL_CHILDREN = [

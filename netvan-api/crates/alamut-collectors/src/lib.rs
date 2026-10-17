@@ -1,5 +1,6 @@
 pub mod app_icon;
 pub mod engine;
+pub mod env_vars;
 pub mod http_latency;
 pub mod ip_info;
 pub mod nic;

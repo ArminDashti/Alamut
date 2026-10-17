@@ -7,6 +7,7 @@ import { LatencyLayout } from "@/pages/latency/LatencyLayout";
 import { IcmpLatencyPage } from "@/pages/latency/IcmpLatencyPage";
 import { HttpLatencyPage } from "@/pages/latency/HttpLatencyPage";
 import { SpeedtestPage } from "@/pages/SpeedtestPage";
+import { EnvVarsPage } from "@/pages/EnvVarsPage";
 import { AppsPage } from "@/pages/AppsPage";
 import { IpHostPage } from "@/pages/IpHostPage";
 import { ToolsLayout } from "@/pages/tools/ToolsLayout";
@@ -44,6 +45,7 @@ export default function App() {
           <Route path="speedtest" element={<SpeedtestPage />} />
           <Route path="apps" element={<AppsPage />} />
           <Route path="hosts" element={<IpHostPage />} />
+          <Route path="env" element={<EnvVarsPage />} />
           <Route path="tools" element={<ToolsLayout />}>
             <Route index element={<Navigate to="nslookup" replace />} />
             <Route path="nslookup" element={<NslookupToolPage />} />

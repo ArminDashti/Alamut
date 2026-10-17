@@ -360,3 +360,16 @@ pub struct ThermalSensor {
 pub struct ThermalSnapshot {
     pub sensors: Vec<ThermalSensor>,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum EnvVarScope {
+    User,
+    System,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnvVar {
+    pub name: String,
+    pub value: String,
+}

@@ -72,7 +72,10 @@ if (Get-Service -Name Alamut -ErrorAction SilentlyContinue) {
 
 Write-Host "==> cargo build -p alamut-api --release --target $target"
 # cargo writes progress to stderr; merge it so Windows PowerShell + "Stop" does not abort on it.
+$prevEA = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
 cargo build -p alamut-api --release --target $target 2>&1 | ForEach-Object { "$_" }
+$ErrorActionPreference = $prevEA
 if ($LASTEXITCODE -ne 0) {
   throw "cargo build failed with exit code $LASTEXITCODE"
 }
