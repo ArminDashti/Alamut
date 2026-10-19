@@ -1,6 +1,6 @@
 //! CPU, memory, and disk snapshots via sysinfo.
 
-use alamut_core::types::{CpuSnapshot, DiskKind, DiskSnapshot, MemorySnapshot};
+use alamut_core::types::{CpuSnapshot, DiskKind, DiskSnapshot, MemorySnapshot, ProcessCpuUsage};
 use parking_lot::Mutex;
 use sysinfo::{CpuRefreshKind, DiskKind as SysDiskKind, Disks, MemoryRefreshKind, RefreshKind, System};
 
@@ -29,6 +29,7 @@ impl SystemMetricsCollector {
 
     pub fn refresh_live(&self) {
         let mut system = self.system.lock();
+        system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
         system.refresh_cpu_specifics(CpuRefreshKind::everything());
         system.refresh_memory_specifics(MemoryRefreshKind::everything());
         let mut disks = self.disks.lock();
@@ -59,6 +60,30 @@ impl SystemMetricsCollector {
                 per_core.iter().sum::<f64>() / per_core.len() as f64
             },
             per_core,
+            // Task-Manager-style: aggregate CPU by app name, high to low, top 20.
+            top_processes: {
+                let mut by_name: std::collections::HashMap<String, f32> =
+                    std::collections::HashMap::new();
+                for (_, p) in system.processes() {
+                    *by_name
+                        .entry(p.name().to_string_lossy().to_string())
+                        .or_default() += p.cpu_usage();
+                }
+                let mut rows: Vec<ProcessCpuUsage> = by_name
+                    .into_iter()
+                    .map(|(process_name, cpu)| ProcessCpuUsage {
+                        process_name,
+                        cpu_percent: cpu as f64,
+                    })
+                    .collect();
+                rows.sort_by(|a, b| {
+                    b.cpu_percent
+                        .partial_cmp(&a.cpu_percent)
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                });
+                rows.truncate(20);
+                rows
+            },
         }
     }
 

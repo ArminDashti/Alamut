@@ -636,6 +636,7 @@ mod tests {
             frequency_mhz: Some(3600),
             utilization: 0.42,
             per_core: vec![0.1, 0.4, 0.9, 0.2],
+            top_processes: Vec::new(),
         });
         app.snap.memory = Some(alamut_core::types::MemorySnapshot {
             total_bytes: 16 * 1024 * 1024 * 1024,

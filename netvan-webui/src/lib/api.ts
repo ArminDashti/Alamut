@@ -103,6 +103,7 @@ export interface CpuSnapshot {
   frequency_mhz: number | null;
   utilization: number;
   per_core: number[];
+  top_processes: { process_name: string; cpu_percent: number }[];
 }
 
 export interface MemorySnapshot {

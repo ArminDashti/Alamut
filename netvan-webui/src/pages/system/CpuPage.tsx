@@ -472,6 +472,45 @@ export function CpuPage() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader className="py-3">
+          <CardTitle className="text-sm font-medium">CPU Usage by App</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {(snap?.top_processes ?? []).length === 0 ? (
+            <p className="py-6 text-center text-sm text-[var(--color-muted-foreground)]">
+              No process samples yet.
+            </p>
+          ) : (
+            <ul className="space-y-1.5">
+              {snap!.top_processes.map((p, i) => {
+                const pct = clampPct(p.cpu_percent);
+                const band = coreBand(pct);
+                return (
+                  <li key={`${p.process_name}-${i}`} className="flex items-center gap-3 text-sm">
+                    <span className="w-5 shrink-0 text-right text-[11px] tabular-nums text-[var(--color-muted-foreground)]">
+                      {i + 1}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate" title={p.process_name}>
+                      {p.process_name}
+                    </span>
+                    <div className="h-1.5 w-28 shrink-0 overflow-hidden rounded-full bg-[var(--color-muted)]">
+                      <div
+                        className={cn("h-full rounded-full", CORE_BAR[band])}
+                        style={{ width: `${Math.min(100, (pct / 25) * 100)}%` }}
+                      />
+                    </div>
+                    <span className="w-14 shrink-0 text-right font-medium tabular-nums">
+                      {formatPercent(pct, 1)}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
       <div className="grid gap-4 xl:grid-cols-[1.35fr_1fr]">
         <Card>
           <CardHeader className="flex-row items-center justify-between gap-3 py-3">

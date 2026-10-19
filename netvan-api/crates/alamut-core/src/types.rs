@@ -205,6 +205,15 @@ pub struct CpuSnapshot {
     pub frequency_mhz: Option<u64>,
     pub utilization: f64,
     pub per_core: Vec<f64>,
+    /// Top processes by aggregated CPU usage, high to low.
+    pub top_processes: Vec<ProcessCpuUsage>,
+}
+
+/// CPU usage of one app (aggregated across its PIDs), percent of one core.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProcessCpuUsage {
+    pub process_name: String,
+    pub cpu_percent: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
