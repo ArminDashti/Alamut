@@ -2,7 +2,7 @@
 
 Localhost API for **alamut-webui**. Collectors and tools run only inside the `alamut-api` Windows service.
 
-Default bind: `127.0.0.1:8000`
+Default bind: `127.0.0.1:28437`
 
 ## Endpoints
 

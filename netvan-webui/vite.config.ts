@@ -6,7 +6,7 @@ import electron from "vite-plugin-electron/simple";
 import path from "path";
 
 const base = process.env.VITE_BASE_PATH || "/";
-const apiProxyTarget = process.env.ALAMUT_API_PROXY_TARGET ?? "http://127.0.0.1:8000";
+const apiProxyTarget = process.env.ALAMUT_API_PROXY_TARGET ?? "http://127.0.0.1:28437";
 const basePrefix = base.replace(/\/$/, "");
 
 const apiProxy = {
@@ -92,7 +92,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: Number(process.env.VITE_DEV_PORT ?? 8001),
+    port: Number(process.env.VITE_DEV_PORT ?? 28438),
     strictPort: true,
     host: process.env.VITE_DEV_HOST ?? "127.0.0.1",
     allowedHosts: ["alamut.local", "alamut-api.local", "localhost", "127.0.0.1"],
@@ -122,4 +122,19 @@ export default defineConfig({
         : {}),
     },
   },
+  // `vite preview` ignores server.proxy, so mirror it or /api calls fail with "Failed to fetch".
+  preview: {
+    proxy: {
+      "/api": apiProxy,
+      ...(basePrefix
+        ? {
+            [`${basePrefix}/api`]: {
+              ...apiProxy,
+              rewrite: (p: string) => p.replace(new RegExp(`^${basePrefix}`), "") || "/",
+            },
+          }
+        : {}),
+    },
+  },
 });
+

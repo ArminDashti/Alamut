@@ -382,3 +382,28 @@ pub struct EnvVar {
     pub name: String,
     pub value: String,
 }
+
+/// Boot, shutdown, restart, or unexpected stop (kernel / event log).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PowerEventKind {
+    Crash,
+    Shutdown,
+    Boot,
+    Restart,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PowerEvent {
+    pub ts: i64,
+    pub kind: PowerEventKind,
+    pub source: String,
+    pub event_id: u32,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PowerEventsReport {
+    pub uptime_secs: u64,
+    pub events: Vec<PowerEvent>,
+}

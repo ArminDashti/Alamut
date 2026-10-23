@@ -32,7 +32,7 @@ pub fn resolve_base(explicit: Option<String>) -> String {
     }
     match std::env::var("ALAMUT_API_BIND") {
         Ok(bind) => format!("http://{bind}"),
-        Err(_) => "http://127.0.0.1:8000".to_string(),
+        Err(_) => "http://127.0.0.1:28437".to_string(),
     }
 }
 

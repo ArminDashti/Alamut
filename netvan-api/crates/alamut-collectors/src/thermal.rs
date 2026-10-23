@@ -62,32 +62,31 @@ fn snapshot_windows() -> ThermalSnapshot {
         }
     }
 
-    return match poll_helper(&mut st) {
-        Ok(mut snap) => {
-            if snap.sensors.is_empty() {
-                match native_wmi_snapshot() {
-                    Ok(native) => snap = native,
-                    Err(e) => warn!("native Windows thermal query failed: {e:#}"),
-                }
-            }
-            st.snapshot = snap.clone();
-            st.at = Some(Instant::now());
-            snap
-        }
-
+    let mut snap = match poll_helper(&mut st) {
+        Ok(snap) => snap,
         Err(e) => {
             warn!("thermal helper: {e:#}");
             drop_helper(&mut st);
-            st.snapshot = ThermalSnapshot {
+            ThermalSnapshot {
                 sensors: Vec::new(),
-            };
-            st.at = Some(Instant::now());
-            st.snapshot.clone()
+            }
         }
     };
 
-    #[cfg(windows)]
-    fn native_wmi_snapshot() -> anyhow::Result<ThermalSnapshot> {
+    if snap.sensors.is_empty() {
+        match native_wmi_snapshot() {
+            Ok(native) => snap = native,
+            Err(e) => warn!("native Windows thermal query failed: {e:#}"),
+        }
+    }
+
+    st.snapshot = snap.clone();
+    st.at = Some(Instant::now());
+    snap
+}
+
+#[cfg(windows)]
+fn native_wmi_snapshot() -> anyhow::Result<ThermalSnapshot> {
         use anyhow::Context;
         use serde::Deserialize;
         use wmi::{COMLibrary, WMIConnection};
@@ -134,8 +133,7 @@ fn snapshot_windows() -> ThermalSnapshot {
             })
             .collect();
 
-        Ok(ThermalSnapshot { sensors })
-    }
+    Ok(ThermalSnapshot { sensors })
 }
 
 #[cfg(windows)]

@@ -108,6 +108,11 @@ pub enum RpcRequest {
     ListEnvVars { scope: EnvVarScope },
     SetEnvVar { scope: EnvVarScope, name: String, value: String },
     DeleteEnvVar { scope: EnvVarScope, name: String },
+    GetPowerEvents {
+        range: HistoryRange,
+        start_ts: Option<i64>,
+        end_ts: Option<i64>,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -142,6 +147,7 @@ pub enum RpcResponse {
     MemoryHistory(SystemMetricHistory),
     DiskHistory(SystemMetricHistory),
     EnvVars(Vec<EnvVar>),
+    PowerEvents(PowerEventsReport),
     Error { message: String },
 }
 

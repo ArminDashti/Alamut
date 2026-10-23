@@ -66,4 +66,5 @@ pub fn webui_dir() -> Option<PathBuf> {
     None
 }
 
-pub const DEFAULT_BIND: &str = "127.0.0.1:8000";
+pub const DEFAULT_BIND: &str = "127.0.0.1:28437";
+

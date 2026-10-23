@@ -107,9 +107,9 @@ See [CLI.md](CLI.md) for every command and option.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `ALAMUT_API_BIND` | `127.0.0.1:8000` | API listen address |
+| `ALAMUT_API_BIND` | `127.0.0.1:28437` | API listen address |
 | `ALAMUT_API_DATA_DIR` | `%ProgramData%\Alamut\AlamutApi\` | Data directory (SQLite database `alamut-web.db`) |
-| `ALAMUT_API_URL` / `ALAMUT_API_BASE` | `http://127.0.0.1:8000` | Endpoint used by `alamut-cli` |
+| `ALAMUT_API_URL` / `ALAMUT_API_BASE` | `http://127.0.0.1:28437` | Endpoint used by `alamut-cli` |
 | `VITE_ALAMUT_API_URL` | same origin (dev proxy) | API origin for the WebUI build |
 
 The installer stores the chosen install location and WebUI port in `%LOCALAPPDATA%\Alamut\config.json`. You can pick the install location (`%LOCALAPPDATA%\Alamut`, `%APPDATA%\Alamut`, `%ProgramFiles%\Alamut`, or a custom path) with `alamut install --location=...`.
@@ -128,7 +128,7 @@ Run the WebUI with hot reload:
 ```powershell
 cd netvan-webui
 npm install
-npm run dev        # http://127.0.0.1:8001, proxies /api to the API
+npm run dev        # http://127.0.0.1:28438, proxies /api to the API
 ```
 
 Build the release binaries:

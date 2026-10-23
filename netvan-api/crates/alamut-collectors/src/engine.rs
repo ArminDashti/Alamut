@@ -315,6 +315,14 @@ impl CollectorEngine {
                 env_vars::delete(scope, &name)?;
                 RpcResponse::Ok
             }
+            RpcRequest::GetPowerEvents {
+                range,
+                start_ts,
+                end_ts,
+            } => {
+                let tr = TimeRange::from_history(range, start_ts, end_ts);
+                RpcResponse::PowerEvents(crate::system_metrics::collect_power_events(&tr)?)
+            }
             RpcRequest::GetBandwidthHistory {
                 nic_id,
                 range,

@@ -19,6 +19,7 @@ import { CpuPage } from "@/pages/system/CpuPage";
 import { MemoryPage } from "@/pages/system/MemoryPage";
 import { HddPage, SsdPage } from "@/pages/system/DiskPage";
 import { ThermalPage } from "@/pages/system/ThermalPage";
+import { PowerPage } from "@/pages/system/PowerPage";
 
 export default function App() {
   const basename = (import.meta.env.BASE_URL || "/").replace(/\/$/, "") || undefined;
@@ -36,6 +37,7 @@ export default function App() {
             <Route path="memory" element={<MemoryPage />} />
             <Route path="ssd" element={<SsdPage />} />
             <Route path="hdd" element={<HddPage />} />
+            <Route path="power" element={<PowerPage />} />
           </Route>
           <Route path="latency" element={<LatencyLayout />}>
             <Route index element={<Navigate to="icmp" replace />} />

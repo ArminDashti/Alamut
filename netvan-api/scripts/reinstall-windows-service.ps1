@@ -45,6 +45,18 @@ function Find-ApiBinary {
   return $null
 }
 
+function Find-HwmonBinary {
+  param([Parameter(Mandatory = $true)][string]$Target)
+  $candidates = @(
+    (Join-Path $RepoRoot "target\$Target\release\alamut-hwmon.exe"),
+    (Join-Path $RepoRoot 'target\release\alamut-hwmon.exe')
+  )
+  foreach ($c in $candidates) {
+    if (Test-Path -LiteralPath $c) { return (Resolve-Path -LiteralPath $c).Path }
+  }
+  return $null
+}
+
 function Invoke-BestEffort {
   param(
     [Parameter(Mandatory = $true)][string]$ExePath,
@@ -99,6 +111,14 @@ if ($uninstallCode -ne 0) {
 $InstalledExe = Join-Path $InstallDir 'alamut-api.exe'
 New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
 if ($Exe -ne $InstalledExe) { Copy-Item -LiteralPath $Exe -Destination $InstalledExe -Force }
+$Hwmon = Find-HwmonBinary -Target $target
+if ($Hwmon) {
+  $InstalledHwmon = Join-Path $InstallDir 'alamut-hwmon.exe'
+  Copy-Item -LiteralPath $Hwmon -Destination $InstalledHwmon -Force
+  Write-Host "==> copied thermal helper to $InstalledHwmon"
+} else {
+  Write-Warning "alamut-hwmon.exe not found under target/*/release (thermal sensors need dotnet publish during cargo build)"
+}
 # Bundle Ookla speedtest CLI next to the exe (speedtest\speedtest.exe is resolved from there).
 $SpeedtestSrc = Join-Path $RepoRoot 'speedtest'
 if (Test-Path -LiteralPath (Join-Path $SpeedtestSrc 'speedtest.exe')) {

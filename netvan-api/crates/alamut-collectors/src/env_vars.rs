@@ -18,7 +18,14 @@ use base64::{engine::general_purpose::STANDARD, Engine};
 /// Resolves `$key` to the registry path of the scope's environment hive.
 fn key_script(scope: EnvVarScope) -> &'static str {
     match scope {
-        EnvVarScope::User => "$sid=(New-Object System.Security.Principal.NTAccount((Get-CimInstance Win32_ComputerSystem).UserName)).Translate([System.Security.Principal.SecurityIdentifier]).Value;$key=\"Registry::HKEY_USERS\\$sid\\Environment\";",
+        EnvVarScope::User => concat!(
+            "$sid=$null;",
+            "$proc=Get-CimInstance Win32_Process -Filter \"Name='explorer.exe'\" -ErrorAction SilentlyContinue | Select-Object -First 1;",
+            "if ($proc) { $own=$proc | Invoke-CimMethod -MethodName GetOwner; $sid=(New-Object System.Security.Principal.NTAccount($own.Domain,$own.User)).Translate([System.Security.Principal.SecurityIdentifier]).Value };",
+            "if (-not $sid) { $u=(Get-CimInstance Win32_ComputerSystem -ErrorAction SilentlyContinue).UserName; if ($u) { $sid=(New-Object System.Security.Principal.NTAccount($u)).Translate([System.Security.Principal.SecurityIdentifier]).Value } };",
+            "if (-not $sid) { throw 'no logged-on user (cannot read user environment)' };",
+            "$key=\"Registry::HKEY_USERS\\$sid\\Environment\";",
+        ),
         EnvVarScope::System => "$key='Registry::HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment';",
     }
 }
@@ -49,14 +56,21 @@ fn run(script: &str, scope: EnvVarScope, name: &str, value: &str) -> Result<Stri
 
 pub fn list(scope: EnvVarScope) -> Result<Vec<EnvVar>> {
     let out = run(
-        "$k=Get-Item -LiteralPath $key;$m=@{};foreach($n in $k.GetValueNames()){$m[$n]=[string]$k.GetValue($n)};\
-         [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(($m|ConvertTo-Json -Compress)))",
+        "if (-not (Test-Path -LiteralPath $key)) { $json='{}' } else { \
+         $k=Get-Item -LiteralPath $key; $m=@{}; foreach($n in $k.GetValueNames()) { $m[$n]=[string]$k.GetValue($n) }; \
+         $json=($m | ConvertTo-Json -Compress) }; \
+         if ($null -eq $json -or $json -eq '') { $json='{}' }; \
+         [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($json))",
         scope,
         "",
         "",
     )?;
     let json = String::from_utf8(STANDARD.decode(out)?)?;
-    let map: BTreeMap<String, String> = serde_json::from_str(&json)?;
+    let map: BTreeMap<String, String> = if json.trim().is_empty() || json.trim() == "null" {
+        BTreeMap::new()
+    } else {
+        serde_json::from_str(&json).context("decode environment variable JSON from registry")?
+    };
     Ok(map.into_iter().map(|(name, value)| EnvVar { name, value }).collect())
 }
 
@@ -67,7 +81,8 @@ pub fn set(scope: EnvVarScope, name: &str, value: &str) -> Result<()> {
         bail!("value must not be empty; delete the variable instead");
     }
     run(
-        "New-ItemProperty -LiteralPath $key -Name $env:ALAMUT_ENV_NAME -Value $env:ALAMUT_ENV_VALUE -PropertyType ExpandString -Force|Out-Null",
+        "if (-not (Test-Path -LiteralPath $key)) { New-Item -Path $key -Force | Out-Null }; \
+         New-ItemProperty -LiteralPath $key -Name $env:ALAMUT_ENV_NAME -Value $env:ALAMUT_ENV_VALUE -PropertyType ExpandString -Force | Out-Null",
         scope,
         name,
         value,
@@ -78,7 +93,7 @@ pub fn set(scope: EnvVarScope, name: &str, value: &str) -> Result<()> {
 pub fn delete(scope: EnvVarScope, name: &str) -> Result<()> {
     validate_name(name)?;
     run(
-        "Remove-ItemProperty -LiteralPath $key -Name $env:ALAMUT_ENV_NAME",
+        "Remove-ItemProperty -LiteralPath $key -Name $env:ALAMUT_ENV_NAME -ErrorAction SilentlyContinue",
         scope,
         name,
         "",

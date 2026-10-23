@@ -1,8 +1,18 @@
 //! CPU, memory, and disk snapshots via sysinfo.
 
-use alamut_core::types::{CpuSnapshot, DiskKind, DiskSnapshot, MemorySnapshot, ProcessCpuUsage};
+use alamut_core::history::TimeRange;
+use alamut_core::types::{
+    CpuSnapshot, DiskKind, DiskSnapshot, MemorySnapshot, PowerEvent, PowerEventKind,
+    PowerEventsReport, ProcessCpuUsage,
+};
+use anyhow::{Context, Result};
+use chrono::{DateTime, Local, TimeZone, Utc};
 use parking_lot::Mutex;
+use serde::Deserialize;
+use std::process::Command;
 use sysinfo::{CpuRefreshKind, DiskKind as SysDiskKind, Disks, MemoryRefreshKind, RefreshKind, System};
+
+use crate::win_cmd::hide_console;
 
 pub struct SystemMetricsCollector {
     system: Mutex<System>,
@@ -161,4 +171,128 @@ impl Default for SystemMetricsCollector {
     fn default() -> Self {
         Self::new()
     }
+}
+
+#[derive(Debug, Deserialize)]
+struct PsPowerEvent {
+    #[serde(rename = "TimeCreated")]
+    time_created: String,
+    #[serde(rename = "Id")]
+    id: u32,
+    #[serde(rename = "ProviderName")]
+    provider_name: String,
+    #[serde(rename = "Message")]
+    message: String,
+}
+
+fn classify_power_event(id: u32, message: &str) -> PowerEventKind {
+    match id {
+        41 | 6008 => PowerEventKind::Crash,
+        6006 => PowerEventKind::Shutdown,
+        6005 | 12 => PowerEventKind::Boot,
+        1074 => {
+            let m = message.to_lowercase();
+            if m.contains("restart") || m.contains("reboot") {
+                PowerEventKind::Restart
+            } else {
+                PowerEventKind::Shutdown
+            }
+        }
+        _ => PowerEventKind::Shutdown,
+    }
+}
+
+fn parse_ps_time(raw: &str) -> Option<i64> {
+    if let Ok(dt) = DateTime::parse_from_rfc3339(raw) {
+        return Some(dt.timestamp());
+    }
+    if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(raw, "%m/%d/%Y %H:%M:%S %p") {
+        return Local
+            .from_local_datetime(&dt)
+            .single()
+            .map(|d| d.timestamp());
+    }
+    if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(raw, "%Y-%m-%d %H:%M:%S") {
+        return Local
+            .from_local_datetime(&dt)
+            .single()
+            .map(|d| d.timestamp());
+    }
+    None
+}
+
+fn power_event_message_line(s: &str) -> String {
+    s.lines()
+        .next()
+        .unwrap_or(s)
+        .trim()
+        .chars()
+        .take(240)
+        .collect()
+}
+
+pub fn collect_power_events(tr: &TimeRange) -> Result<PowerEventsReport> {
+    Ok(PowerEventsReport {
+        uptime_secs: System::uptime(),
+        events: query_power_events(tr)?,
+    })
+}
+
+#[cfg(windows)]
+fn query_power_events(tr: &TimeRange) -> Result<Vec<PowerEvent>> {
+    let start_ts = tr.start_ts.unwrap_or_else(|| Utc::now().timestamp() - 30 * 86_400);
+    let end_ts = tr.end_ts.unwrap_or_else(|| Utc::now().timestamp());
+
+    let ps = format!(
+        "$s=[DateTimeOffset]::FromUnixTimeSeconds({start_ts}).LocalDateTime; \
+         $e=Get-WinEvent -FilterHashtable @{{LogName='System';Id=41,12,6005,6006,6008,1074;StartTime=$s}} \
+         -MaxEvents 500 -ErrorAction SilentlyContinue; \
+         if ($null -eq $e) {{ '[]' }} else {{ $e | Select-Object TimeCreated,Id,ProviderName,Message | ConvertTo-Json -Compress }}"
+    );
+
+    let output = hide_console(
+        Command::new("powershell").args(["-NoProfile", "-NonInteractive", "-Command", &ps]),
+    )
+    .output()
+    .context("spawn powershell for power events")?;
+
+    if !output.status.success() && output.stdout.is_empty() {
+        let err = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("power events query failed: {err}");
+    }
+
+    let stdout_raw = String::from_utf8_lossy(&output.stdout);
+    let stdout = stdout_raw.trim();
+    if stdout.is_empty() || stdout == "[]" {
+        return Ok(Vec::new());
+    }
+
+    let parsed: Vec<PsPowerEvent> = if stdout.starts_with('[') {
+        serde_json::from_str(stdout).context("parse power events json array")?
+    } else {
+        vec![serde_json::from_str(stdout).context("parse power events json object")?]
+    };
+
+    let mut events: Vec<PowerEvent> = Vec::new();
+    for ev in parsed {
+        let ts = parse_ps_time(&ev.time_created).unwrap_or(0);
+        if ts < start_ts || ts > end_ts {
+            continue;
+        }
+        events.push(PowerEvent {
+            ts,
+            kind: classify_power_event(ev.id, &ev.message),
+            source: ev.provider_name,
+            event_id: ev.id,
+            message: power_event_message_line(&ev.message),
+        });
+    }
+
+    events.sort_by(|a, b| b.ts.cmp(&a.ts));
+    Ok(events)
+}
+
+#[cfg(not(windows))]
+fn query_power_events(_tr: &TimeRange) -> Result<Vec<PowerEvent>> {
+    Ok(Vec::new())
 }

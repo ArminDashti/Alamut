@@ -16,7 +16,7 @@ alamut tui
 
 :: or directly
 alamut-cli
-alamut-cli --api http://127.0.0.1:8000
+alamut-cli --api http://127.0.0.1:28437
 alamut-cli --poll-ms 1000
 ```
 
@@ -27,7 +27,7 @@ Headless connectivity check (prints the overview snapshot as JSON, exit code 1 i
 the API cannot be reached):
 
 ```cmd
-alamut-cli --dump --api http://127.0.0.1:8000
+alamut-cli --dump --api http://127.0.0.1:28437
 ```
 
 Build it:

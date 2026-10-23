@@ -1,42 +1,14 @@
-use anyhow::Result;
-use axum::body::Body;
-use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
-use axum::extract::State;
-use axum::http::{HeaderValue, Method, Request, StatusCode, header};
-use axum::response::{IntoResponse, Response};
-use axum::routing::{get, post};
-use axum::{Json, Router};
-use futures_util::{SinkExt, StreamExt};
-use alamut_collectors::ip_info;
-use alamut_collectors::ping::{self, PingLineEvent};
-use alamut_collectors::speedtest::{self, SpeedtestProgress};
-use alamut_collectors::traceroute::{self, TracerouteHopEvent};
-use alamut_collectors::CollectorEngine;
-use alamut_core::db::Database;
-use alamut_core::ipc::{RpcRequest, RpcResponse};
-use alamut_core::paths::{self, DEFAULT_BIND};
-use serde::{Deserialize, Serialize};
-use serde_json::json;
-use std::future::Future;
-use std::net::SocketAddr;
-use std::sync::Arc;
-use tower::ServiceExt;
-use tower_http::cors::{AllowOrigin, Any, CorsLayer};
-use tower_http::services::ServeDir;
-use tracing::info;
-
-#[derive(Clone)]
-pub struct AppState {
-    pub engine: Arc<CollectorEngine>,
-}
-
+http_server.rs 528L cognitive
+// C:/Users/armin/GitHub/Alamut/netvan-api/crates/alamut-api/src/http_server.rs
+§ function run_standalone (L33-L38)
 pub async fn run_standalone() -> Result<()> {
     let shutdown = async {
         let _ = tokio::signal::ctrl_c().await;
     };
     run(shutdown).await
 }
-
+// ... 1 lines omitted
+§ function run(shutdown (L40-L177)
 pub async fn run(shutdown: impl Future<Output = ()> + Send + 'static) -> Result<()> {
     paths::ensure_data_dir()?;
     let db = Database::open_default()?;
@@ -162,7 +134,7 @@ pub async fn run(shutdown: impl Future<Output = ()> + Send + 'static) -> Result<
     let addr: SocketAddr = bind.parse()?;
     let listener = match tokio::net::TcpListener::bind(addr).await {
         Ok(listener) => listener,
-        // ponytail: fallback is any free port via OS; the WebUI proxy and CLI still assume 8000.
+        // ponytail: fallback is any free port via OS; the WebUI proxy and CLI still assume 28437.
         Err(e) if e.kind() == std::io::ErrorKind::AddrInUse => {
             tokio::net::TcpListener::bind(SocketAddr::new(addr.ip(), 0)).await?
         }
@@ -175,11 +147,13 @@ pub async fn run(shutdown: impl Future<Output = ()> + Send + 'static) -> Result<
         .await?;
     Ok(())
 }
-
+// ... 1 lines omitted
+§ function health (L179-L181)
 async fn health() -> impl IntoResponse {
     Json(json!({ "ok": true, "service": "Alamut" }))
 }
-
+// ... 1 lines omitted
+§ function data_dir (L183-L192)
 async fn data_dir() -> impl IntoResponse {
     match paths::ensure_data_dir() {
         Ok(p) => Json(json!({ "path": p.display().to_string() })).into_response(),
@@ -190,52 +164,13 @@ async fn data_dir() -> impl IntoResponse {
             .into_response(),
     }
 }
-
-async fn rpc(State(state): State<AppState>, Json(req): Json<RpcRequest>) -> impl IntoResponse {
-    let response = state.engine.handle(req).await;
-    Json(response)
-}
-
+// ... 6 lines omitted
+§ function ws_tools(ws (L199-L201)
 async fn ws_tools(ws: WebSocketUpgrade, State(state): State<AppState>) -> impl IntoResponse {
     ws.on_upgrade(move |socket| handle_tools_socket(socket, state))
 }
-
-#[derive(Debug, Deserialize)]
-#[serde(tag = "type", rename_all = "snake_case")]
-enum ClientMsg {
-    PingLive {
-        target: String,
-        count: Option<u32>,
-        packet_size: Option<u32>,
-    },
-    TracerouteLive {
-        target: String,
-        max_hops: Option<u8>,
-    },
-    SpeedtestLive {
-        nic_id: Option<String>,
-        server_id: Option<String>,
-        accept_eula: bool,
-    },
-    CancelSpeedtest,
-    LookupIpInfo {
-        ip: String,
-    },
-}
-
-#[derive(Debug, Serialize)]
-#[serde(tag = "type", rename_all = "snake_case")]
-enum ServerMsg {
-    PingLine { event: PingLineEvent },
-    PingDone { result: serde_json::Value },
-    TracerouteHop { event: TracerouteHopEvent },
-    TracerouteDone { result: serde_json::Value },
-    SpeedtestProgress { event: SpeedtestProgress },
-    SpeedtestDone { result: serde_json::Value },
-    IpInfo { ip: String, info: serde_json::Value },
-    Error { message: String },
-}
-
+// ... 37 lines omitted
+§ function handle_tools_socket(socket (L239-L518)
 async fn handle_tools_socket(socket: WebSocket, state: AppState) {
     let (mut tx, mut rx) = socket.split();
 
@@ -516,7 +451,8 @@ async fn handle_tools_socket(socket: WebSocket, state: AppState) {
         }
     }
 }
-
+// ... 1 lines omitted
+§ function send_json<T (L520-L528)
 async fn send_json<T: Serialize>(
     tx: &mut futures_util::stream::SplitSink<WebSocket, Message>,
     msg: &T,
@@ -526,3 +462,5 @@ async fn send_json<T: Serialize>(
     });
     tx.send(Message::Text(text.into())).await
 }
+7/12 chunks shown (3128 tokens)
+[lean-ctx] full source: read "C:/Users/armin/GitHub/Alamut/netvan-api/crates/alamut-api/src/http_server.rs" directly (no MCP)  ·  or ctx_read("C:/Users/armin/GitHub/Alamut/netvan-api/crates/alamut-api/src/http_server.rs", mode="full")

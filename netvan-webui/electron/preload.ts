@@ -19,7 +19,7 @@ function resolveApiUrlSync(): string {
   }
   const env = process.env.ALAMUT_API_URL || process.env.ALAMUT_API_BASE;
   if (env && env.trim()) return env.trim().replace(/\/$/, "");
-  return "http://127.0.0.1:8000";
+  return "http://127.0.0.1:28437";
 }
 
 contextBridge.exposeInMainWorld("alamut", {

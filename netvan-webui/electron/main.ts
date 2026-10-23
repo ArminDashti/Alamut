@@ -10,7 +10,7 @@
  * API origin is discovered in this order:
  *   1. --api-url=<host:port>  (passed by the CLI wrapper)
  *   2. ALAMUT_API_URL env var
- *   3. http://127.0.0.1:8000
+ *   3. http://127.0.0.1:28437
  */
 
 import { app, BrowserWindow, ipcMain, shell, dialog } from "electron";
@@ -27,7 +27,7 @@ function resolveApiUrl(): string {
   }
   const env = process.env.ALAMUT_API_URL || process.env.ALAMUT_API_BASE;
   if (env && env.trim()) return env.trim().replace(/\/$/, "");
-  return "http://127.0.0.1:8000";
+  return "http://127.0.0.1:28437";
 }
 
 function resolveRendererPath(): string {
@@ -37,7 +37,7 @@ function resolveRendererPath(): string {
     return dist;
   }
   // Dev: Vite dev server (started by vite-plugin-electron onstart).
-  const url = process.env.VITE_DEV_URL || "http://localhost:8001";
+  const url = process.env.VITE_DEV_URL || "http://localhost:28438";
   return url;
 }
 
@@ -126,3 +126,5 @@ ipcMain.on("alamut:open-external", (_e, url: string) => {
 });
 
 ipcMain.on("alamut:quit", () => app.quit());
+
+

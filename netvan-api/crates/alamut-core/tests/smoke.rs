@@ -1,6 +1,8 @@
 use alamut_core::db::Database;
 use alamut_core::history::{HistoryRange, TimeRange};
+use alamut_core::ipc::RpcRequest;
 use alamut_core::settings::AppSettings;
+use alamut_core::types::EnvVarScope;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[test]
@@ -9,6 +11,15 @@ fn history_ranges_produce_bounds() {
     assert!(today.start_ts.is_some());
     let all = TimeRange::from_history(HistoryRange::All, None, None);
     assert!(all.start_ts.is_none());
+}
+
+#[test]
+fn rpc_list_env_vars_request_deserializes() {
+    let req: RpcRequest = serde_json::from_str(
+        r#"{"method":"ListEnvVars","params":{"scope":"user"}}"#,
+    )
+    .expect("ListEnvVars JSON must deserialize (WebUI wire format)");
+    assert!(matches!(req, RpcRequest::ListEnvVars { scope: EnvVarScope::User }));
 }
 
 #[test]
@@ -26,3 +37,5 @@ fn sqlite_roundtrip_settings() {
     assert_eq!(loaded.ping_interval_secs, 9);
     let _ = std::fs::remove_file(path);
 }
+
+

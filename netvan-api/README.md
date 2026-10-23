@@ -42,11 +42,11 @@ SCM **service name:** `alamut-api`
 
 ## Listen address
 
-Default: `http://127.0.0.1:8000` (localhost only)
+Default: `http://127.0.0.1:28437` (localhost only)
 
 | Env | Default |
 |-----|---------|
-| `ALAMUT_API_BIND` | `127.0.0.1:8000` |
+| `ALAMUT_API_BIND` | `127.0.0.1:28437` |
 | `ALAMUT_API_DATA_DIR` | `%ProgramData%\Alamut\AlamutApi\` |
 
 SQLite file: `alamut-web.db` under the data dir.
@@ -80,4 +80,4 @@ Server streams tagged events (`ping_line`, `traceroute_hop`, `speedtest_progress
 cargo run -p alamut-api -- run
 ```
 
-Then point **alamut-webui** at `http://127.0.0.1:8000`.
+Then point **alamut-webui** at `http://127.0.0.1:28437`.

@@ -1,122 +1,6 @@
-//! Terminal app: setup, event loop, key handling, and the shared chrome
-//! (header, tab bar, footer) plus dispatch into the per-view renderers.
-
-pub mod apps;
-pub mod bandwidth;
-pub mod help;
-pub mod latency;
-pub mod nics;
-pub mod overview;
-pub mod system;
-pub mod tools;
-pub mod widgets;
-
-use std::time::Duration;
-
-use anyhow::Result;
-use chrono::Local;
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
-use ratatui::layout::{Constraint, Layout, Rect};
-use ratatui::style::{Color, Modifier, Style};
-use ratatui::text::{Line, Span};
-use ratatui::widgets::{Paragraph, Tabs};
-use ratatui::Frame;
-use tokio::sync::mpsc;
-
-use crate::api::ApiClient;
-use crate::state::{Cmd, Ev, Snapshot, ToolEvent, ToolKind, View};
-use crate::theme;
-
-pub struct App {
-    pub view: View,
-    /// 0 = all NICs, otherwise index into `snap.nics`.
-    pub nic_sel: usize,
-    /// NIC id the poller is currently filtered to.
-    pub nic_filter: Option<String>,
-    pub snap: Snapshot,
-    pub tool: ToolKind,
-    pub input: String,
-    pub cursor: usize,
-    pub input_active: bool,
-    pub tool_lines: Vec<String>,
-    pub tool_status: Option<String>,
-    pub tool_running: bool,
-    pub tool_scroll: usize,
-    /// Local confirmation that the speedtest EULA was accepted this session.
-    pub eula_ack: bool,
-    pub show_help: bool,
-    pub quit: bool,
-    frame: u64,
-}
-
-impl App {
-    fn new() -> Self {
-        Self {
-            view: View::Overview,
-            nic_sel: 0,
-            nic_filter: None,
-            snap: Snapshot::default(),
-            tool: ToolKind::Ping,
-            input: String::new(),
-            cursor: 0,
-            input_active: false,
-            tool_lines: Vec::new(),
-            tool_status: None,
-            tool_running: false,
-            tool_scroll: 0,
-            eula_ack: false,
-            show_help: false,
-            quit: false,
-            frame: 0,
-        }
-    }
-
-    fn selected_nic_id(&self) -> Option<String> {
-        if self.nic_sel == 0 {
-            None
-        } else {
-            self.snap
-                .nics
-                .get(self.nic_sel - 1)
-                .map(|n| n.id.clone())
-        }
-    }
-
-    fn selected_nic_label(&self) -> String {
-        if self.nic_sel == 0 {
-            "all NICs".to_string()
-        } else {
-            self.snap
-                .nics
-                .get(self.nic_sel - 1)
-                .map(|n| n.name.clone())
-                .unwrap_or_else(|| "all NICs".to_string())
-        }
-    }
-
-    /// Effective tool target: typed text, else the placeholder default.
-    fn tool_target(&self) -> String {
-        if self.input.trim().is_empty() {
-            self.tool.placeholder().to_string()
-        } else {
-            self.input.trim().to_string()
-        }
-    }
-
-    fn push_line(&mut self, line: String) {
-        self.tool_lines.push(line);
-        self.tool_scroll = 0;
-    }
-}
-
-/// Run the whole TUI until the user quits.
-pub async fn run(base: String, poll_ms: u64) -> Result<()> {
-    let mut terminal = ratatui::init();
-    let result = event_loop(&mut terminal, base, poll_ms).await;
-    ratatui::restore();
-    result
-}
-
+mod.rs 714L cognitive
+// C:/Users/armin/GitHub/Alamut/netvan-api/crates/alamut-cli/src/ui/mod.rs
+§ function event_loop (L120-L164)
 async fn event_loop(
     terminal: &mut ratatui::DefaultTerminal,
     base: String,
@@ -162,32 +46,8 @@ async fn event_loop(
     poller.abort();
     Ok(())
 }
-
-fn apply_event(app: &mut App, ev: Ev) {
-    match ev {
-        Ev::Snapshot(s) => app.snap = *s,
-        Ev::Tool(te) => match te {
-            ToolEvent::Status(s) => {
-                app.tool_running = !s.contains("accepted");
-                app.tool_status = Some(s);
-            }
-            ToolEvent::Line(l) => app.push_line(l),
-            ToolEvent::Finished => {
-                app.tool_running = false;
-                app.tool_status = Some("finished".into());
-                app.push_line("── finished ──".into());
-            }
-            ToolEvent::Failed(e) => {
-                app.tool_running = false;
-                app.tool_status = Some(format!("error: {e}"));
-                app.push_line(format!("✖ {e}"));
-            }
-        },
-    }
-}
-
-// ---------------------------------------------------------------- key handling
-
+// ... 26 lines omitted
+§ function handle_key(app (L191-L261)
 async fn handle_key(app: &mut App, key: KeyEvent, cmd: &mpsc::Sender<Cmd>) -> Result<()> {
     if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
         app.quit = true;
@@ -259,14 +119,8 @@ async fn handle_key(app: &mut App, key: KeyEvent, cmd: &mpsc::Sender<Cmd>) -> Re
     }
     Ok(())
 }
-
-async fn set_view(app: &mut App, cmd: &mpsc::Sender<Cmd>, view: View) {
-    if app.view != view {
-        app.view = view;
-        let _ = cmd.send(Cmd::SetView(view)).await;
-    }
-}
-
+// ... 8 lines omitted
+§ function handle_input_key(app (L270-L303)
 async fn handle_input_key(app: &mut App, key: KeyEvent, cmd: &mpsc::Sender<Cmd>) -> Result<()> {
     match key.code {
         KeyCode::Esc => {
@@ -301,7 +155,8 @@ async fn handle_input_key(app: &mut App, key: KeyEvent, cmd: &mpsc::Sender<Cmd>)
     }
     Ok(())
 }
-
+// ... 1 lines omitted
+§ function handle_tools_key(app (L305-L342)
 async fn handle_tools_key(app: &mut App, key: KeyEvent, cmd: &mpsc::Sender<Cmd>) -> Result<()> {
     match key.code {
         KeyCode::Char('i') | KeyCode::Enter => {
@@ -340,7 +195,8 @@ async fn handle_tools_key(app: &mut App, key: KeyEvent, cmd: &mpsc::Sender<Cmd>)
     }
     Ok(())
 }
-
+// ... 1 lines omitted
+§ function submit_tool(app (L344-L367)
 async fn submit_tool(app: &mut App, cmd: &mpsc::Sender<Cmd>) -> Result<()> {
     if app.tool_running {
         app.tool_status = Some("already running…".into());
@@ -365,38 +221,8 @@ async fn submit_tool(app: &mut App, cmd: &mpsc::Sender<Cmd>) -> Result<()> {
         .await;
     Ok(())
 }
-
-// --------------------------------------------------------------------- render
-
-fn render(f: &mut Frame, app: &mut App) {
-    let area = f.area();
-    if area.width < 64 || area.height < 20 {
-        f.render_widget(
-            Paragraph::new("Terminal too small — resize to at least 64×20.")
-                .style(Style::default().fg(theme::ROSE)),
-            area,
-        );
-        return;
-    }
-
-    let chunks = Layout::vertical([
-        Constraint::Length(3),
-        Constraint::Length(3),
-        Constraint::Min(10),
-        Constraint::Length(1),
-    ])
-    .split(area);
-
-    header(f, app, chunks[0]);
-    tabs(f, app, chunks[1]);
-    body(f, app, chunks[2]);
-    footer(f, app, chunks[3]);
-
-    if app.show_help {
-        help::overlay(f, area);
-    }
-}
-
+// ... 32 lines omitted
+§ function header(f (L400-L477)
 fn header(f: &mut Frame, app: &App, area: Rect) {
     let accent = theme::accent(app.view.index());
     let block = ratatui::widgets::Block::default()
@@ -475,53 +301,8 @@ fn header(f: &mut Frame, app: &App, area: Rect) {
         inner,
     );
 }
-
-fn text_width(spans: &[Span]) -> usize {
-    spans.iter().map(|s| s.content.chars().count()).sum()
-}
-
-fn tabs(f: &mut Frame, app: &App, area: Rect) {
-    let accent = theme::accent(app.view.index());
-    let titles: Vec<Line> = View::ALL
-        .iter()
-        .map(|v| {
-            Line::from(vec![
-                Span::styled(
-                    format!("{} ", v.index() + 1),
-                    Style::default().fg(theme::DIM),
-                ),
-                Span::styled(v.symbol().to_string(), Style::default().fg(theme::accent(v.index()))),
-                Span::styled(
-                    format!(" {}", v.title()),
-                    Style::default().fg(if *v == app.view {
-                        theme::FG
-                    } else {
-                        theme::SLATE
-                    }),
-                ),
-            ])
-        })
-        .collect();
-
-    let widget = Tabs::new(titles)
-        .select(app.view.index())
-        .divider(Span::styled("│", Style::default().fg(theme::DIM)))
-        .highlight_style(
-            Style::default()
-                .fg(Color::Black)
-                .bg(accent)
-                .add_modifier(Modifier::BOLD),
-        )
-        .style(Style::default())
-        .block(
-            ratatui::widgets::Block::default()
-                .borders(ratatui::widgets::Borders::ALL)
-                .border_type(ratatui::widgets::BorderType::Rounded)
-                .border_style(Style::default().fg(theme::HEADER_BG)),
-        );
-    f.render_widget(widget, area);
-}
-
+// ... 47 lines omitted
+§ function body(f (L525-L563)
 fn body(f: &mut Frame, app: &mut App, area: Rect) {
     if !app.snap.connected {
         if let Some(err) = app.snap.error.clone() {
@@ -541,7 +322,7 @@ fn body(f: &mut Frame, app: &mut App, area: Rect) {
                     Style::default().fg(theme::SLATE),
                 )),
                 Line::from(Span::styled(
-                    "  Override the endpoint with:  alamut-cli --api http://127.0.0.1:8000",
+                    "  Override the endpoint with:  alamut-cli --api http://127.0.0.1:28437",
                     Style::default().fg(theme::DIM),
                 )),
             ])
@@ -561,154 +342,5 @@ fn body(f: &mut Frame, app: &mut App, area: Rect) {
         View::Tools => tools::render(f, app, area),
     }
 }
-
-fn footer(f: &mut Frame, app: &App, area: Rect) {
-    let key = |k: &str| Span::styled(format!(" {k} "), Style::default().fg(Color::Black).bg(theme::SLATE).add_modifier(Modifier::BOLD));
-    let dim = |t: &str| Span::styled(t.to_string(), Style::default().fg(theme::DIM));
-
-    let mut spans = match app.view {
-        View::Tools if app.input_active => vec![
-            key("Enter"),
-            dim(" run  "),
-            key("Esc"),
-            dim(" cancel  "),
-            dim("type the target, then press Enter"),
-        ],
-        View::Tools => vec![
-            key("i"),
-            dim(" input  "),
-            key("←/→"),
-            dim(" tool  "),
-            key("r"),
-            dim(" run  "),
-            key("a"),
-            dim(" accept EULA  "),
-            key("c"),
-            dim(" clear  "),
-            key("↑/↓"),
-            dim(" scroll  "),
-        ],
-        View::Nics | View::Bandwidth | View::Latency => vec![
-            key("↑/↓"),
-            dim(" pick NIC  "),
-            key("Enter"),
-            dim(" apply filter  "),
-            key("r"),
-            dim(" refresh  "),
-        ],
-        _ => vec![key("r"), dim(" refresh  ")],
-    };
-    spans.extend([
-        dim("  │  "),
-        key("?"),
-        dim(" help  "),
-        key("Tab"),
-        dim(" next  "),
-        key("q"),
-        dim(" quit"),
-    ]);
-
-    f.render_widget(Paragraph::new(Line::from(spans)), area);
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use ratatui::backend::TestBackend;
-    use ratatui::Terminal;
-
-    fn sample_app(view: View) -> App {
-        let mut app = App::new();
-        app.view = view;
-        app.snap.connected = true;
-        app.snap.updated = Some(Local::now());
-        app.snap.status = Some(alamut_core::types::ServiceStatus {
-            running: true,
-            pipe_connected: true,
-            capture_mode: "driver".into(),
-            message: "ok".into(),
-        });
-        app.snap.cpu = Some(alamut_core::types::CpuSnapshot {
-            brand: "Test CPU".into(),
-            vendor_id: "test".into(),
-            physical_cores: Some(4),
-            logical_cores: 8,
-            frequency_mhz: Some(3600),
-            utilization: 0.42,
-            per_core: vec![0.1, 0.4, 0.9, 0.2],
-            top_processes: Vec::new(),
-        });
-        app.snap.memory = Some(alamut_core::types::MemorySnapshot {
-            total_bytes: 16 * 1024 * 1024 * 1024,
-            used_bytes: 6 * 1024 * 1024 * 1024,
-            available_bytes: 10 * 1024 * 1024 * 1024,
-            utilization: 0.375,
-        });
-        app.snap.disks = vec![alamut_core::types::DiskSnapshot {
-            id: "c".into(),
-            name: "System".into(),
-            mount_point: "C:\\".into(),
-            file_system: "NTFS".into(),
-            kind: alamut_core::types::DiskKind::Ssd,
-            total_bytes: 512 * 1024 * 1024 * 1024,
-            used_bytes: 200 * 1024 * 1024 * 1024,
-            available_bytes: 312 * 1024 * 1024 * 1024,
-            utilization: 0.39,
-        }];
-        app.snap.bandwidth = (0..30)
-            .map(|i| alamut_core::types::UsagePoint {
-                ts: 1_700_000_000 + i * 30,
-                rx_bytes: (i as u64) * 1_000_000,
-                tx_bytes: (i as u64) * 250_000,
-            })
-            .collect();
-        app.snap.ping = (0..10)
-            .map(|i| alamut_core::types::PingSample {
-                nic_id: None,
-                target: "1.1.1.1".into(),
-                ts: 1_700_000_000 + i * 60,
-                rtt_ms: Some(10.0 + (i as f64)),
-                success: true,
-                error: None,
-                raw_output: None,
-            })
-            .collect();
-        app
-    }
-
-    #[test]
-    fn every_view_renders() {
-        for view in View::ALL {
-            let mut app = sample_app(view);
-            let mut terminal = Terminal::new(TestBackend::new(120, 40)).unwrap();
-            terminal
-                .draw(|f| render(f, &mut app))
-                .unwrap_or_else(|e| panic!("view {:?} failed to render: {e}", view.title()));
-        }
-    }
-
-    #[test]
-    fn every_view_renders_when_offline() {
-        let mut app = App::new();
-        app.snap.connected = false;
-        app.snap.error = Some("connection refused".into());
-        app.snap.updated = Some(Local::now());
-        let mut terminal = Terminal::new(TestBackend::new(120, 40)).unwrap();
-        terminal.draw(|f| render(f, &mut app)).unwrap();
-    }
-
-    #[test]
-    fn help_overlay_renders() {
-        let mut app = sample_app(View::Overview);
-        app.show_help = true;
-        let mut terminal = Terminal::new(TestBackend::new(100, 32)).unwrap();
-        terminal.draw(|f| render(f, &mut app)).unwrap();
-    }
-
-    #[test]
-    fn tiny_terminal_is_handled() {
-        let mut app = sample_app(View::Overview);
-        let mut terminal = Terminal::new(TestBackend::new(40, 10)).unwrap();
-        terminal.draw(|f| render(f, &mut app)).unwrap();
-    }
-}
+7/32 chunks shown (2746 tokens)
+[lean-ctx] full source: read "C:/Users/armin/GitHub/Alamut/netvan-api/crates/alamut-cli/src/ui/mod.rs" directly (no MCP)  ·  or ctx_read("C:/Users/armin/GitHub/Alamut/netvan-api/crates/alamut-cli/src/ui/mod.rs", mode="full")

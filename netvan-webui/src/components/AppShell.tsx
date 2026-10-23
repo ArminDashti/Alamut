@@ -51,6 +51,7 @@ const SYSTEM_CHILDREN = [
   { to: "/system/memory", label: "Memory" },
   { to: "/system/ssd", label: "SSD" },
   { to: "/system/hdd", label: "HDD" },
+  { to: "/system/power", label: "Power" },
 ];
 
 function NavItem({

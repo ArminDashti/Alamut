@@ -391,7 +391,7 @@ param(
   [Parameter(Mandatory = $true)]
   [string]$Root,
 
-  [int]$Port = 8001,
+  [int]$Port = 28438,
 
   [string]$HostAddress = '127.0.0.1'
 )
@@ -496,9 +496,9 @@ param(
 
   [string]$DataDir = (Join-Path $env:ProgramData 'Alamut\AlamutApi'),
 
-  [int]$ApiPort = 8000,
+  [int]$ApiPort = 28437,
 
-  [int]$WebUiPort = 8001,
+  [int]$WebUiPort = 28438,
 
   [string]$BindHost = '127.0.0.1'
 )
