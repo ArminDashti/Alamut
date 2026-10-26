@@ -73,9 +73,13 @@ fn snapshot_windows() -> ThermalSnapshot {
         }
     };
 
-    if snap.sensors.is_empty() {
+    if !snapshot_has_readings(&snap) {
         match native_wmi_snapshot() {
-            Ok(native) => snap = native,
+            Ok(native) => {
+                if snapshot_has_readings(&native) || snap.sensors.is_empty() {
+                    snap = native;
+                }
+            }
             Err(e) => warn!("native Windows thermal query failed: {e:#}"),
         }
     }
@@ -86,54 +90,141 @@ fn snapshot_windows() -> ThermalSnapshot {
 }
 
 #[cfg(windows)]
+fn snapshot_has_readings(snap: &ThermalSnapshot) -> bool {
+    snap.sensors
+        .iter()
+        .any(|s| s.celsius.is_some_and(|c| c.is_finite()))
+}
+
+#[cfg(windows)]
+fn kelvin_to_celsius(kelvin: f64) -> f64 {
+    kelvin - 273.15
+}
+
+#[cfg(windows)]
 fn native_wmi_snapshot() -> anyhow::Result<ThermalSnapshot> {
-        use anyhow::Context;
-        use serde::Deserialize;
-        use wmi::{COMLibrary, WMIConnection};
+    use anyhow::Context;
+    use wmi::COMLibrary;
 
-        #[derive(Deserialize)]
-        struct ThermalZone {
-            #[serde(rename = "CurrentTemperature")]
-            current_temperature: Option<u32>,
-            #[serde(rename = "InstanceName")]
-            instance_name: Option<String>,
-        }
-
-        let com = COMLibrary::new().context("initialize WMI COM")?;
-        let wmi = WMIConnection::new(com).context("connect to WMI")?;
-        let rows: Vec<ThermalZone> = wmi.raw_query(
-            "SELECT CurrentTemperature, InstanceName FROM MSAcpi_ThermalZoneTemperature",
-        )?;
-
-        let sensors = rows
-            .into_iter()
-            .filter_map(|row| {
-                let raw = row.current_temperature?;
-                if raw == 0 {
-                    return None;
-                }
-                let celsius = raw as f64 / 10.0 - 273.15;
-                if !(-50.0..=150.0).contains(&celsius) {
-                    return None;
-                }
-                let name = row
-                    .instance_name
-                    .as_deref()
-                    .and_then(|v| v.rsplit('\\').next())
-                    .filter(|v| !v.is_empty())
-                    .unwrap_or("ACPI thermal zone")
-                    .to_string();
-                Some(alamut_core::types::ThermalSensor {
-                    id: format!("wmi:{name}"),
-                    hardware_kind: alamut_core::types::HardwareKind::Motherboard,
-                    hardware_name: "Windows ACPI".into(),
-                    sensor_name: name,
-                    celsius: Some(celsius),
-                })
-            })
-            .collect();
-
+    let com = COMLibrary::new().context("initialize WMI COM")?;
+    let mut sensors = acpi_thermal_sensors(com)?;
+    if !snapshot_has_readings(&ThermalSnapshot {
+        sensors: sensors.clone(),
+    }) {
+        sensors.extend(perf_counter_thermal_sensors(com)?);
+    }
     Ok(ThermalSnapshot { sensors })
+}
+
+#[cfg(windows)]
+fn acpi_thermal_sensors(
+    com: wmi::COMLibrary,
+) -> anyhow::Result<Vec<alamut_core::types::ThermalSensor>> {
+    use anyhow::Context;
+    use serde::Deserialize;
+    use wmi::WMIConnection;
+
+    #[derive(Deserialize)]
+    struct ThermalZone {
+        #[serde(rename = "CurrentTemperature")]
+        current_temperature: Option<u32>,
+        #[serde(rename = "InstanceName")]
+        instance_name: Option<String>,
+    }
+
+    let wmi = WMIConnection::with_namespace_path("ROOT\\WMI", com)
+        .context("connect to WMI ROOT\\WMI")?;
+    let rows: Vec<ThermalZone> = match wmi.raw_query(
+        "SELECT CurrentTemperature, InstanceName FROM MSAcpi_ThermalZoneTemperature",
+    ) {
+        Ok(rows) => rows,
+        Err(e) => {
+            warn!("MSAcpi_ThermalZoneTemperature query failed: {e:#}");
+            return Ok(Vec::new());
+        }
+    };
+
+    Ok(rows
+        .into_iter()
+        .filter_map(|row| {
+            let raw = row.current_temperature?;
+            if raw == 0 {
+                return None;
+            }
+            let celsius = raw as f64 / 10.0 - 273.15;
+            if !(-50.0..=150.0).contains(&celsius) {
+                return None;
+            }
+            let name = row
+                .instance_name
+                .as_deref()
+                .and_then(|v| v.rsplit('\\').next())
+                .filter(|v| !v.is_empty())
+                .unwrap_or("ACPI thermal zone")
+                .to_string();
+            Some(alamut_core::types::ThermalSensor {
+                id: format!("wmi:acpi:{name}"),
+                hardware_kind: alamut_core::types::HardwareKind::Motherboard,
+                hardware_name: "Windows ACPI".into(),
+                sensor_name: name,
+                celsius: Some(celsius),
+            })
+        })
+        .collect())
+}
+
+#[cfg(windows)]
+fn perf_counter_thermal_sensors(
+    com: wmi::COMLibrary,
+) -> anyhow::Result<Vec<alamut_core::types::ThermalSensor>> {
+    use anyhow::Context;
+    use serde::Deserialize;
+    use wmi::WMIConnection;
+
+    #[derive(Deserialize)]
+    struct ThermalPerf {
+        #[serde(rename = "Name")]
+        name: Option<String>,
+        #[serde(rename = "HighPrecisionTemperature")]
+        high_precision_temperature: Option<u32>,
+        #[serde(rename = "Temperature")]
+        temperature: Option<u32>,
+    }
+
+    let wmi = WMIConnection::new(com).context("connect to WMI")?;
+    let rows: Vec<ThermalPerf> = wmi.raw_query(
+        "SELECT Name, HighPrecisionTemperature, Temperature FROM Win32_PerfFormattedData_Counters_ThermalZoneInformation",
+    )?;
+
+    Ok(rows
+        .into_iter()
+        .filter_map(|row| {
+            let celsius = if let Some(hp) = row.high_precision_temperature.filter(|v| *v > 0) {
+                kelvin_to_celsius(hp as f64 / 10.0)
+            } else if let Some(k) = row.temperature.filter(|v| *v > 0) {
+                kelvin_to_celsius(k as f64)
+            } else {
+                return None;
+            };
+            if !(-50.0..=150.0).contains(&celsius) {
+                return None;
+            }
+            let name = row
+                .name
+                .as_deref()
+                .map(str::trim)
+                .filter(|v| !v.is_empty())
+                .unwrap_or("Thermal zone")
+                .to_string();
+            Some(alamut_core::types::ThermalSensor {
+                id: format!("wmi:perf:{name}"),
+                hardware_kind: alamut_core::types::HardwareKind::Motherboard,
+                hardware_name: "Windows thermal".into(),
+                sensor_name: name,
+                celsius: Some(celsius),
+            })
+        })
+        .collect())
 }
 
 #[cfg(windows)]

@@ -1271,7 +1271,7 @@ fn upsert_hourly(
 fn should_use_hourly(history_range: HistoryRange, range: &TimeRange) -> bool {
     match history_range {
         HistoryRange::Today | HistoryRange::Yesterday => false,
-        HistoryRange::Week | HistoryRange::Months | HistoryRange::All => true,
+        HistoryRange::Week | HistoryRange::LastWeek | HistoryRange::Months | HistoryRange::All => true,
         HistoryRange::Custom => {
             let start = range.start_ts.unwrap_or(0);
             let end = range.end_ts.unwrap_or(Utc::now().timestamp());

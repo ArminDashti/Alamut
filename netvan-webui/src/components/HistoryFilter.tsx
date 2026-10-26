@@ -6,6 +6,7 @@ const RANGES: { id: HistoryRange; label: string }[] = [
   { id: "today", label: "Today" },
   { id: "yesterday", label: "Yesterday" },
   { id: "week", label: "Week" },
+  { id: "last_week", label: "Last week" },
   { id: "months", label: "Months" },
   { id: "custom", label: "Custom" },
 ];

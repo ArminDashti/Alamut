@@ -63,6 +63,7 @@ export function formatHistoryAxisLabel(ts: number, range: HistoryRange): string 
     case "yesterday":
       return String(d.getHours()).padStart(2, "0");
     case "week":
+    case "last_week":
       return WEEKDAYS[d.getDay()] ?? "";
     case "months":
       return String(d.getDate());

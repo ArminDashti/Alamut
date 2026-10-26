@@ -87,6 +87,21 @@ export function buildPeriodColumns(
     return cols;
   }
 
+  if (range === "last_week") {
+    const weekStart = addDays(startOfSatWeek(today), -7);
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = addDays(weekStart, i);
+      const next = addDays(day, 1);
+      const label = WEEKDAY_SAT_START[i]!;
+      return {
+        key: `lwd-${day.toISOString().slice(0, 10)}`,
+        label,
+        startMs: day.getTime(),
+        endMs: next.getTime(),
+      };
+    });
+  }
+
   if (range === "months") {
     const dayNum = today.getDate();
     const year = today.getFullYear();

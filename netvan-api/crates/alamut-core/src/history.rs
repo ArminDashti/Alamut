@@ -1,4 +1,4 @@
-use chrono::{DateTime, Duration, Local, NaiveDate, TimeZone, Utc};
+use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -7,6 +7,7 @@ pub enum HistoryRange {
     Today,
     Yesterday,
     Week,
+    LastWeek,
     Months,
     All,
     Custom,
@@ -52,6 +53,14 @@ impl TimeRange {
                     end_ts: Some(Utc::now().timestamp()),
                 }
             }
+            HistoryRange::LastWeek => {
+                let week_start = saturday_week_start(today);
+                let last_week_start = week_start - Duration::days(7);
+                Self {
+                    start_ts: Some(local_day_start(last_week_start)),
+                    end_ts: Some(local_day_start(week_start) - 1),
+                }
+            }
             HistoryRange::Months => {
                 let start_day = today - Duration::days(30);
                 Self {
@@ -61,6 +70,12 @@ impl TimeRange {
             }
         }
     }
+}
+
+/// Saturday-start week containing `day` (local), matching WebUI `startOfSatWeek`.
+fn saturday_week_start(day: NaiveDate) -> NaiveDate {
+    let back = (day.weekday().num_days_from_sunday() + 1) % 7;
+    day - Duration::days(back as i64)
 }
 
 fn local_day_start(day: NaiveDate) -> i64 {

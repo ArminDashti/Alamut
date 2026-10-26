@@ -113,9 +113,12 @@ New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
 if ($Exe -ne $InstalledExe) { Copy-Item -LiteralPath $Exe -Destination $InstalledExe -Force }
 $Hwmon = Find-HwmonBinary -Target $target
 if ($Hwmon) {
-  $InstalledHwmon = Join-Path $InstallDir 'alamut-hwmon.exe'
-  Copy-Item -LiteralPath $Hwmon -Destination $InstalledHwmon -Force
-  Write-Host "==> copied thermal helper to $InstalledHwmon"
+  $HwmonDir = Split-Path -Parent $Hwmon
+  $InstalledHwmonDir = Join-Path $InstallDir 'alamut-hwmon'
+  New-Item -ItemType Directory -Force -Path $InstalledHwmonDir | Out-Null
+  Copy-Item -Path (Join-Path $HwmonDir 'alamut-hwmon.*') -Destination $InstalledHwmonDir -Force
+  Copy-Item -Path (Join-Path $HwmonDir '*.dll') -Destination $InstalledHwmonDir -Force
+  Write-Host "==> copied thermal helper to $InstalledHwmonDir"
 } else {
   Write-Warning "alamut-hwmon.exe not found under target/*/release (thermal sensors need dotnet publish during cargo build)"
 }
