@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -43,6 +42,41 @@ const THEMES: { id: AppTheme; label: string; swatch: [string, string, string] }[
   { id: "tokyo-night", label: "Tokyo Night", swatch: ["#1a1b26", "#7aa2f7", "#24283b"] },
 ];
 
+/** Inset-grouped list container (iOS Settings style). */
+function Group({ title, children }: { title?: string; children: React.ReactNode }) {
+  return (
+    <section className="apple-group">
+      {title && <h3 className="apple-group-title">{title}</h3>}
+      <div className="apple-card">{children}</div>
+    </section>
+  );
+}
+
+/** One settings row: label + description on the left, control on the right. */
+function Row({
+  label,
+  description,
+  children,
+}: {
+  label: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="apple-row">
+      <div className="min-w-0">
+        <div className="text-sm font-medium">{label}</div>
+        {description && (
+          <div className="mt-0.5 text-xs leading-relaxed text-[var(--color-muted-foreground)]">
+            {description}
+          </div>
+        )}
+      </div>
+      <div className="shrink-0">{children}</div>
+    </div>
+  );
+}
+
 function IgnoreListEditor({
   label,
   placeholder,
@@ -66,8 +100,8 @@ function IgnoreListEditor({
     setDraft("");
   };
   return (
-    <div className="space-y-2">
-      <div className="text-sm text-[var(--color-muted-foreground)]">{label}</div>
+    <div className="apple-row flex-col items-stretch gap-2">
+      <div className="text-sm font-medium">{label}</div>
       <div className="flex gap-2">
         <Input
           value={draft}
@@ -92,7 +126,7 @@ function IgnoreListEditor({
           <button
             key={v}
             type="button"
-            className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] px-2 py-0.5 text-xs hover:border-[var(--color-destructive)]/50"
+            className="apple-chip"
             onClick={() => onChange(values.filter((x) => x !== v))}
             title="Remove"
           >
@@ -205,25 +239,28 @@ export function SettingsPage() {
     return <div className="text-sm text-[var(--color-muted-foreground)]">Loading…</div>;
   }
 
+  const selectClass =
+    "apple-select mt-1 w-full";
+
   return (
     <div className="space-y-5">
       {msg && (
-        <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] px-3 py-2 text-sm">
+        <div className="apple-toast" role="status">
           {msg}
         </div>
       )}
 
-      <div className="flex min-h-[28rem] gap-4">
-        <nav className="flex w-44 shrink-0 flex-col gap-0.5">
+      <div className="flex min-h-[28rem] gap-6">
+        {/* Translucent sidebar — content scrolls beneath the material */}
+        <nav className="apple-sidebar flex w-44 shrink-0 flex-col gap-0.5 self-start rounded-xl p-1.5">
           {CATEGORIES.map((c) => (
             <button
               key={c.id}
               type="button"
               onClick={() => setCategory(c.id)}
               className={cn(
-                "rounded-md px-3 py-2 text-left text-sm text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]",
-                category === c.id &&
-                  "bg-[var(--color-muted)] font-medium text-[var(--color-foreground)]",
+                "apple-nav-item rounded-lg px-3 py-2 text-left text-sm text-[var(--color-muted-foreground)]",
+                category === c.id && "is-active font-medium text-[var(--color-foreground)]",
               )}
             >
               {c.label}
@@ -231,349 +268,292 @@ export function SettingsPage() {
           ))}
         </nav>
 
-        <div className="min-w-0 flex-1">
+        <div key={category} className="apple-panel min-w-0 flex-1 space-y-5">
           {category === "appearance" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Theme</CardTitle>
-                <CardDescription>Choose a color theme for the app</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {THEMES.map((t) => {
-                    const active = (settings.theme ?? "dark-plus") === t.id;
-                    return (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => void setTheme(t.id)}
-                        className={cn(
-                          "rounded-lg border p-3 text-left transition-colors",
-                          active
-                            ? "border-[var(--color-primary)] bg-[var(--color-muted)]"
-                            : "border-[var(--color-border)] hover:border-[var(--color-primary)]/50",
-                        )}
-                      >
-                        <div className="mb-2 flex gap-1">
-                          {t.swatch.map((color) => (
-                            <span
-                              key={color}
-                              className="h-6 w-6 rounded-md border border-[var(--color-border)]"
-                              style={{ backgroundColor: color }}
-                            />
-                          ))}
-                        </div>
-                        <div className="text-sm font-medium">{t.label}</div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+            <Group title="Theme">
+              <div className="grid gap-3 p-3 sm:grid-cols-2 lg:grid-cols-3">
+                {THEMES.map((t) => {
+                  const active = (settings.theme ?? "dark-plus") === t.id;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => void setTheme(t.id)}
+                      className={cn(
+                        "apple-press rounded-xl border p-3 text-left",
+                        active
+                          ? "border-[var(--color-primary)] bg-[var(--color-muted)] ring-1 ring-[var(--color-primary)]"
+                          : "border-[var(--color-border)]",
+                      )}
+                    >
+                      <div className="mb-2 flex gap-1">
+                        {t.swatch.map((color) => (
+                          <span
+                            key={color}
+                            className="h-6 w-6 rounded-full border border-[var(--color-border)]"
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
+                      </div>
+                      <div className="text-sm font-medium">{t.label}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </Group>
           )}
 
           {category === "general" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Startup</CardTitle>
-                <CardDescription>
-                  Background collection runs in the <code className="text-xs">alamut-api</code>{" "}
-                  Windows service. This PWA only displays results.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <div className="text-sm font-medium">Start UI with Windows</div>
-                    <div className="text-xs text-[var(--color-muted-foreground)]">
-                      Saves the autostart flag used by the API service companion
-                    </div>
-                  </div>
-                  <Switch
-                    checked={settings.start_ui_with_windows}
-                    onCheckedChange={() => void toggleAutostart()}
-                    aria-label="Start UI with Windows"
-                  />
-                </div>
-              </CardContent>
-            </Card>
+            <Group title="Startup">
+              <Row
+                label="Start UI with Windows"
+                description="Background collection runs in the alamut-api Windows service. This PWA only displays results."
+              >
+                <Switch
+                  checked={settings.start_ui_with_windows}
+                  onCheckedChange={() => void toggleAutostart()}
+                  aria-label="Start UI with Windows"
+                />
+              </Row>
+            </Group>
           )}
 
           {category === "capture" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Traffic capture</CardTitle>
-                <CardDescription>Process-level TCP ESTATS capture</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] px-3 py-2 text-sm">
+            <Group title="Traffic capture">
+              <Row label="Capture mode" description="Process-level TCP ESTATS capture">
+                <span className="rounded-full bg-[var(--color-muted)] px-3 py-1 text-xs font-medium">
                   Process (app + IP)
-                </div>
-              </CardContent>
-            </Card>
+                </span>
+              </Row>
+            </Group>
           )}
 
           {category === "strip" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Taskbar speed strip</CardTitle>
-                <CardDescription>
-                  Compact download/upload on the taskbar. Prefers the gap between Widgets and
-                  Start; otherwise docks near the tray.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <label className="block text-sm">
-                  <span className="text-[var(--color-muted-foreground)]">Network interface</span>
-                  <select
-                    className="mt-1 flex h-9 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] px-2 text-sm"
-                    value={settings.default_nic_id ?? ""}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        default_nic_id: e.target.value || null,
-                      })
-                    }
-                  >
-                    <option value="">All NICs</option>
-                    {nics.map((n) => (
-                      <option key={n.id} value={n.id}>
-                        {n.name}
-                        {n.oper_status !== "Up" ? ` (${n.oper_status})` : ""}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block text-sm">
-                  <span className="text-[var(--color-muted-foreground)]">Strip location</span>
-                  <select
-                    className="mt-1 flex h-9 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] px-2 text-sm"
-                    value={settings.strip_slot}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        strip_slot: e.target.value as "widgets_start" | "near_tray",
-                      })
-                    }
-                  >
-                    <option value="widgets_start">Between weather and Start</option>
-                    <option value="near_tray">Near system tray</option>
-                  </select>
-                </label>
-                <label className="block text-sm">
-                  <span className="text-[var(--color-muted-foreground)]">
-                    Horizontal offset (px)
-                  </span>
-                  <Input
-                    type="number"
-                    min={-40}
-                    max={200}
-                    step={2}
-                    className="mt-1"
-                    value={settings.strip_offset_px}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        strip_offset_px: Number(e.target.value) || 0,
-                      })
-                    }
-                  />
-                </label>
-                <label className="block text-sm">
-                  <span className="text-[var(--color-muted-foreground)]">Strip width (px)</span>
-                  <Input
-                    type="number"
-                    min={80}
-                    max={200}
-                    step={4}
-                    className="mt-1"
-                    value={settings.strip_width_px}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        strip_width_px: Number(e.target.value) || 110,
-                      })
-                    }
-                  />
-                </label>
-                <label className="block text-sm">
-                  <span className="text-[var(--color-muted-foreground)]">Font size (px)</span>
-                  <Input
-                    type="number"
-                    min={8}
-                    max={14}
-                    step={1}
-                    className="mt-1"
-                    value={settings.strip_font_px}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        strip_font_px: Number(e.target.value) || 10,
-                      })
-                    }
-                  />
-                </label>
+            <Group title="Taskbar speed strip">
+              <p className="px-1 pb-1 text-xs leading-relaxed text-[var(--color-muted-foreground)]">
+                Compact download/upload on the taskbar. Prefers the gap between Widgets and
+                Start; otherwise docks near the tray.
+              </p>
+              <Row label="Network interface">
+                <select
+                  className={selectClass}
+                  value={settings.default_nic_id ?? ""}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      default_nic_id: e.target.value || null,
+                    })
+                  }
+                >
+                  <option value="">All NICs</option>
+                  {nics.map((n) => (
+                    <option key={n.id} value={n.id}>
+                      {n.name}
+                      {n.oper_status !== "Up" ? ` (${n.oper_status})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </Row>
+              <Row label="Strip location">
+                <select
+                  className={selectClass}
+                  value={settings.strip_slot}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      strip_slot: e.target.value as "widgets_start" | "near_tray",
+                    })
+                  }
+                >
+                  <option value="widgets_start">Between weather and Start</option>
+                  <option value="near_tray">Near system tray</option>
+                </select>
+              </Row>
+              <Row label="Horizontal offset (px)">
+                <Input
+                  type="number"
+                  min={-40}
+                  max={200}
+                  step={2}
+                  className="w-24"
+                  value={settings.strip_offset_px}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      strip_offset_px: Number(e.target.value) || 0,
+                    })
+                  }
+                />
+              </Row>
+              <Row label="Strip width (px)">
+                <Input
+                  type="number"
+                  min={80}
+                  max={200}
+                  step={4}
+                  className="w-24"
+                  value={settings.strip_width_px}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      strip_width_px: Number(e.target.value) || 110,
+                    })
+                  }
+                />
+              </Row>
+              <Row label="Font size (px)">
+                <Input
+                  type="number"
+                  min={8}
+                  max={14}
+                  step={1}
+                  className="w-24"
+                  value={settings.strip_font_px}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      strip_font_px: Number(e.target.value) || 10,
+                    })
+                  }
+                />
+              </Row>
+              <div className="flex justify-end px-3 pb-3 pt-1">
                 <Button onClick={() => void save()}>Save</Button>
-              </CardContent>
-            </Card>
+              </div>
+            </Group>
           )}
 
           {category === "intervals" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Intervals</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="text-sm">
-                    <span className="text-[var(--color-muted-foreground)]">Ping interval (s)</span>
-                    <Input
-                      type="number"
-                      className="mt-1"
-                      value={settings.ping_interval_secs}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          ping_interval_secs: Number(e.target.value) || 5,
-                        })
-                      }
-                    />
-                  </label>
-                  <label className="text-sm">
-                    <span className="text-[var(--color-muted-foreground)]">HTTP interval (s)</span>
-                    <Input
-                      type="number"
-                      className="mt-1"
-                      value={settings.http_interval_secs}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          http_interval_secs: Number(e.target.value) || 30,
-                        })
-                      }
-                    />
-                  </label>
-                </div>
+            <Group title="Intervals">
+              <Row label="Ping interval (s)">
+                <Input
+                  type="number"
+                  className="w-24"
+                  value={settings.ping_interval_secs}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      ping_interval_secs: Number(e.target.value) || 5,
+                    })
+                  }
+                />
+              </Row>
+              <Row label="HTTP interval (s)">
+                <Input
+                  type="number"
+                  className="w-24"
+                  value={settings.http_interval_secs}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      http_interval_secs: Number(e.target.value) || 30,
+                    })
+                  }
+                />
+              </Row>
+              <div className="flex justify-end px-3 pb-3 pt-1">
                 <Button onClick={() => void save()}>Save</Button>
-              </CardContent>
-            </Card>
+              </div>
+            </Group>
           )}
 
           {category === "ignore" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Ignore lists</CardTitle>
-                <CardDescription>
-                  Hidden from Apps and IP/Host stats. Traffic is still captured.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={settings.ignore_private_ips}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        ignore_private_ips: e.target.checked,
-                      })
-                    }
-                  />
-                  <span>Ignore private IPs in IP/Host stats</span>
-                </label>
-                {(
-                  [
-                    ["ignored_apps", "Apps (process names)", "chrome.exe"] as const,
-                    ["ignored_ips", "IPs", "1.1.1.1"] as const,
-                    ["ignored_urls", "URLs / hosts", "cdn.example.com"] as const,
-                  ] as const
-                ).map(([key, label, placeholder]) => (
-                  <IgnoreListEditor
-                    key={key}
-                    label={label}
-                    placeholder={placeholder}
-                    values={settings[key]}
-                    onChange={(values) => setSettings({ ...settings, [key]: values })}
-                  />
-                ))}
+            <Group title="Ignore lists">
+              <p className="px-1 pb-1 text-xs leading-relaxed text-[var(--color-muted-foreground)]">
+                Hidden from Apps and IP/Host stats. Traffic is still captured.
+              </p>
+              <Row label="Ignore private IPs" description="In IP/Host stats">
+                <Switch
+                  checked={settings.ignore_private_ips}
+                  onCheckedChange={(checked) =>
+                    setSettings({ ...settings, ignore_private_ips: checked })
+                  }
+                  aria-label="Ignore private IPs"
+                />
+              </Row>
+              {(
+                [
+                  ["ignored_apps", "Apps (process names)", "chrome.exe"] as const,
+                  ["ignored_ips", "IPs", "1.1.1.1"] as const,
+                  ["ignored_urls", "URLs / hosts", "cdn.example.com"] as const,
+                ] as const
+              ).map(([key, label, placeholder]) => (
+                <IgnoreListEditor
+                  key={key}
+                  label={label}
+                  placeholder={placeholder}
+                  values={settings[key]}
+                  onChange={(values) => setSettings({ ...settings, [key]: values })}
+                />
+              ))}
+              <div className="flex justify-end px-3 pb-3 pt-1">
                 <Button onClick={() => void save()}>Save</Button>
-              </CardContent>
-            </Card>
+              </div>
+            </Group>
           )}
 
           {category === "data" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Data</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <label className="block text-sm">
-                  <span className="text-[var(--color-muted-foreground)]">Retention (days)</span>
-                  <Input
-                    type="number"
-                    className="mt-1"
-                    value={settings.retention_raw_days}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        retention_raw_days: Number(e.target.value) || 14,
-                      })
-                    }
-                  />
-                </label>
-                <label className="block text-sm">
-                  <span className="text-[var(--color-muted-foreground)]">
-                    Speedtest CLI path (optional)
-                  </span>
-                  <Input
-                    className="mt-1"
-                    value={settings.speedtest_cli_path ?? ""}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        speedtest_cli_path: e.target.value || null,
-                      })
-                    }
-                  />
-                </label>
-                <div className="text-xs text-[var(--color-muted-foreground)]">
-                  Data directory: {dataDir}
-                </div>
+            <Group title="Data">
+              <Row label="Retention (days)">
+                <Input
+                  type="number"
+                  className="w-24"
+                  value={settings.retention_raw_days}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      retention_raw_days: Number(e.target.value) || 14,
+                    })
+                  }
+                />
+              </Row>
+              <Row label="Speedtest CLI path" description="Optional">
+                <Input
+                  className="w-64"
+                  value={settings.speedtest_cli_path ?? ""}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      speedtest_cli_path: e.target.value || null,
+                    })
+                  }
+                />
+              </Row>
+              <Row label="Data directory" description={dataDir || undefined}>
                 <div className="flex gap-2">
                   <Button onClick={() => void save()}>Save</Button>
                   <OpenDataDirButton />
                 </div>
-              </CardContent>
-            </Card>
+              </Row>
+            </Group>
           )}
 
           {category === "about" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>About me</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <p className="text-lg font-semibold">Armin Dashti</p>
-                <p className="text-[var(--color-muted-foreground)]">
+            <Group title="About me">
+              <div className="apple-row flex-col items-start gap-1">
+                <p className="text-lg font-semibold tracking-tight">Armin Dashti</p>
+                <p className="text-sm text-[var(--color-muted-foreground)]">
                   Software engineer · Network monitoring &amp; systems tooling
                 </p>
-                <p>Created by Armin Dashti</p>
-                <div className="space-y-1 text-[var(--color-muted-foreground)]">
-                  <p>
-                    GitHub:{" "}
-                    <a
-                      className="text-[var(--color-primary)] underline-offset-2 hover:underline"
-                      href="https://github.com/armindashti"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      github.com/armindashti
-                    </a>
-                  </p>
-                  <p>Alamut — local network monitor for Windows</p>
-                </div>
-              </CardContent>
-            </Card>
+                <p className="text-sm">Created by Armin Dashti</p>
+              </div>
+              <div className="apple-row flex-col items-start gap-1 text-sm">
+                <p>
+                  GitHub:{" "}
+                  <a
+                    className="text-[var(--color-primary)] underline-offset-2 hover:underline"
+                    href="https://github.com/armindashti"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    github.com/armindashti
+                  </a>
+                </p>
+                <p className="text-[var(--color-muted-foreground)]">
+                  Alamut — local network monitor for Windows
+                </p>
+              </div>
+            </Group>
           )}
         </div>
       </div>

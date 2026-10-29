@@ -44,17 +44,17 @@ When only DB/schema or live SQLite data changed:
 
 When WebUI code changed:
 
-1. Stop and remove the current WebUI process (whatever is bound to `127.0.0.1:8001`). Do not rely on HMR.
+1. Stop and remove the current WebUI process (whatever is bound to `127.0.0.1:28438`). Do not rely on HMR.
 2. From `alamut-webui`: `npm run build`
-3. Start a fresh server on the usual port, e.g. `npx vite preview --host 127.0.0.1 --port 8001` (or project-equivalent cold serve on `8001`)
+3. Start a fresh server on the usual port, e.g. `npx vite preview --host 127.0.0.1 --port 28438` (or project-equivalent cold serve on `28438`)
 4. Never uninstall/reinstall the API service for WebUI-only edits — but confirm the API service is running; reinstall/start it only if it is down and the user needs the stack.
 
 ## Always leave both running
 
 Before saying the change is live:
 
-1. API: service `status` shows installed and running (or listening on `127.0.0.1:8000`)
-2. WebUI: listening on `127.0.0.1:8001`
+1. API: service `status` shows installed and running (or listening on `127.0.0.1:28437`)
+2. WebUI: listening on `127.0.0.1:28438`
 3. If a section was not rebuilt this turn but its process is down, start that section only (no extra rebuild of the other)
 
 ## When not to refresh

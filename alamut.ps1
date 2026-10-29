@@ -1,4 +1,3 @@
-alamut.ps1 [658L]
 #Requires -Version 5.1
 <#
 .SYNOPSIS

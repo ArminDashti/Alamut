@@ -593,10 +593,10 @@ export async function healthCheck(): Promise<boolean> {
 export function toolsWsUrl(): string {
   // In the browser PWA the API is same-origin (proxied /api), so use the
   // page origin. In Electron the API is on a separate host:port, so use
-  // API_BASE directly (it already resolves to http://127.0.0.1:8000).
+  // API_BASE directly (it already resolves to http://127.0.0.1:28437).
   const base = API_BASE && /^https?:\/\//.test(API_BASE) ? API_BASE : "";
   const origin =
-    base || (typeof window !== "undefined" ? window.location.origin : "http://127.0.0.1:8001");
+    base || (typeof window !== "undefined" ? window.location.origin : "http://127.0.0.1:28438");
   const u = new URL("/api/ws/tools", origin);
   u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
   return u.toString();
